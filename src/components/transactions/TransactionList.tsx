@@ -9,6 +9,8 @@ interface Transaction {
   status: "success" | "pending" | "failed";
   date: string;
   description: string;
+  tag: "personal" | "business" | "investment";
+  category?: string;
 }
 
 const statusColors = {

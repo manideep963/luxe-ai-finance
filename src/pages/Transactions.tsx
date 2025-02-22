@@ -10,21 +10,45 @@ import { supabase } from "@/integrations/supabase/client";
 
 type TransactionFilter = "all" | "business" | "personal" | "investment";
 
+interface Transaction {
+  id: string;
+  amount: number;
+  type: "deposit" | "withdrawal" | "payment";
+  status: "success" | "pending" | "failed";
+  date: string;
+  description: string;
+  tag: "personal" | "business" | "investment";
+  category?: string;
+}
+
 export default function Transactions() {
   const [filter, setFilter] = useState<TransactionFilter>("all");
   const { toast } = useToast();
 
-  const { data: transactions, isLoading } = useQuery({
+  const { data: transactions, isLoading } = useQuery<Transaction[]>({
     queryKey: ['transactions', filter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from('transactions')
         .select('*')
-        .eq(filter !== 'all' ? 'tag' : 'id', filter !== 'all' ? filter : 'id')
         .order('date', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (filter !== 'all') {
+        query.eq('tag', filter);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        toast({
+          title: "Error fetching transactions",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+      
+      return data as Transaction[];
     },
   });
 

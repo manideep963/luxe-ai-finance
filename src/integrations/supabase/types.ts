@@ -36,6 +36,30 @@ export type Database = {
         }
         Relationships: []
       }
+      market_watchlist: {
+        Row: {
+          added_at: string | null
+          id: string
+          symbol: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          id?: string
+          symbol: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          id?: string
+          symbol?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -57,6 +81,45 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          date: string | null
+          description: string | null
+          id: string
+          status: string
+          tag: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          status: string
+          tag?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          tag?: string | null
+          type?: string
+          user_id?: string | null
         }
         Relationships: []
       }

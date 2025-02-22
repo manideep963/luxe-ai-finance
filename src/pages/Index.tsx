@@ -1,7 +1,15 @@
-
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { DollarSignIcon, PiggyBankIcon, CreditCardIcon, ChartBarIcon, PlusIcon } from "lucide-react";
+import { 
+  DollarSignIcon, 
+  PiggyBankIcon, 
+  CreditCardIcon, 
+  ChartBarIcon, 
+  BellIcon, 
+  TrendingUpIcon, 
+  AlertTriangleIcon,
+  PlusIcon
+} from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { StatCard } from "@/components/stats/StatCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
@@ -11,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Mock transactions data
 const mockTransactions = [
@@ -43,12 +52,32 @@ const mockTransactions = [
   },
 ];
 
+// Weekly spending data example
+const weeklySpendingData = [
+  { day: 'Mon', amount: 120 },
+  { day: 'Tue', amount: 180 },
+  { day: 'Wed', amount: 150 },
+  { day: 'Thu', amount: 220 },
+  { day: 'Fri', amount: 180 },
+  { day: 'Sat', amount: 250 },
+  { day: 'Sun', amount: 170 }
+];
+
+// Upcoming bills example
+const upcomingBills = [
+  { id: 1, name: 'Netflix Subscription', amount: 15.99, dueDate: '2024-03-25' },
+  { id: 2, name: 'Electricity Bill', amount: 120.00, dueDate: '2024-03-28' },
+  { id: 3, name: 'Internet Service', amount: 79.99, dueDate: '2024-04-01' }
+];
+
 const Index = () => {
   const { toast } = useToast();
   const [financialData, setFinancialData] = useState({
     monthly_salary: 0,
     total_savings: 0,
-    monthly_expenditure: 0
+    monthly_expenditure: 0,
+    net_worth: 150000, // Example value
+    budget: 3000, // Example monthly budget
   });
   const [newExpenditure, setNewExpenditure] = useState("");
   const [loading, setLoading] = useState(false);
@@ -73,7 +102,10 @@ const Index = () => {
     }
 
     if (data) {
-      setFinancialData(data);
+      setFinancialData(prev => ({
+        ...prev,
+        ...data
+      }));
     }
   };
 
@@ -131,9 +163,9 @@ const Index = () => {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-            Welcome back
+            Financial Overview
           </h1>
-          <p className="text-white/60 mt-2">Here's your financial overview</p>
+          <p className="text-white/60 mt-2">Track your financial health and upcoming bills</p>
         </motion.div>
 
         {/* Stats Grid */}
@@ -145,10 +177,10 @@ const Index = () => {
             icon={DollarSignIcon}
           />
           <StatCard
-            title="Total Savings"
-            value={`$${financialData.total_savings.toFixed(2)}`}
-            change={{ value: 1.2, trend: "up" }}
-            icon={PiggyBankIcon}
+            title="Net Worth"
+            value={`$${financialData.net_worth.toFixed(2)}`}
+            change={{ value: 5.2, trend: "up" }}
+            icon={TrendingUpIcon}
           />
           <Dialog>
             <DialogTrigger asChild>
@@ -184,6 +216,61 @@ const Index = () => {
               </div>
             </DialogContent>
           </Dialog>
+        </div>
+
+        {/* Weekly Spending Trends */}
+        <div className="glass-card p-6">
+          <h3 className="text-xl font-semibold text-white mb-4">Weekly Spending Trends</h3>
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklySpendingData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <XAxis dataKey="day" stroke="#ffffff60" />
+                <YAxis stroke="#ffffff60" />
+                <Tooltip 
+                  contentStyle={{ 
+                    background: 'rgba(0,0,0,0.8)', 
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#00E6E6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#00E6E6' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Upcoming Bills */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-white">Upcoming Bills</h3>
+            <Button variant="outline" size="sm">
+              <BellIcon className="w-4 h-4 mr-2" />
+              Set Reminders
+            </Button>
+          </div>
+          <div className="space-y-4">
+            {upcomingBills.map(bill => (
+              <div key={bill.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+                <div>
+                  <p className="text-white font-medium">{bill.name}</p>
+                  <p className="text-white/60 text-sm">Due: {new Date(bill.dueDate).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-medium">${bill.amount.toFixed(2)}</p>
+                  <Button variant="link" size="sm" className="text-neon">
+                    Pay Now
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Two Column Layout */}

@@ -1,10 +1,9 @@
-
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpIcon, ArrowDownIcon, CreditCardIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface Transaction {
+export interface Transaction {
   id: string;
   amount: number;
   type: "deposit" | "withdrawal" | "payment";

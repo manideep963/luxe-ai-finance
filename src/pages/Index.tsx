@@ -177,10 +177,10 @@ const Index = () => {
             icon={DollarSignIcon}
           />
           <StatCard
-            title="Net Worth"
-            value={`$${financialData.net_worth.toFixed(2)}`}
+            title="Total Savings"
+            value={`$${financialData.total_savings.toFixed(2)}`}
             change={{ value: 5.2, trend: "up" }}
-            icon={TrendingUpIcon}
+            icon={PiggyBankIcon}
           />
           <Dialog>
             <DialogTrigger asChild>

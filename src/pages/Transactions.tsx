@@ -82,7 +82,7 @@ export default function Transactions() {
     isRecurring: false
   });
 
-  const { data: transactions, isLoading, refetch } = useQuery({
+  const { data: transactions = [], isLoading, refetch } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -97,6 +97,14 @@ export default function Transactions() {
       if (error) throw error;
       return data as Transaction[];
     },
+  });
+
+  // Filter transactions based on search query and selected category
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchesSearch = transaction.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || transaction.category === selectedCategory;
+    const matchesType = filter === "all" || transaction.type === filter;
+    return matchesSearch && matchesCategory && matchesType;
   });
 
   const handleAddTransaction = async () => {

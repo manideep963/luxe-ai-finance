@@ -25,7 +25,7 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
 
     try {
       const { error } = await supabase
-        .from('financial_data')
+        .from("financial_data")
         .upsert({
           user_id: userId,
           monthly_salary: Number(salary),

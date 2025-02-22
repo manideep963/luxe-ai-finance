@@ -1,12 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -21,7 +19,15 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
-// Mock data - replace with real data from your backend
+type FinancialDataType = {
+  id: string;
+  user_id: string;
+  monthly_salary: number;
+  total_savings: number;
+  monthly_expenditure: number;
+  updated_at: string;
+};
+
 const expenseCategories = [
   { name: "Housing", value: 2000, color: "#00E6E6" },
   { name: "Food", value: 800, color: "#F5A623" },
@@ -39,12 +45,12 @@ export default function Analytics() {
     queryKey: ['financial-data'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('financial_data')
-        .select('*')
+        .from("financial_data")
+        .select("*")
         .single();
       
       if (error) throw error;
-      return data;
+      return data as FinancialDataType;
     },
   });
 

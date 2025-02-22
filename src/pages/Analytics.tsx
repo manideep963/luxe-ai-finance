@@ -1,73 +1,43 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-import {
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { BrainCircuitIcon, CalendarIcon } from "lucide-react";
+import { BrainCircuitIcon, CalendarIcon, TrendingUpIcon, WalletIcon } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AnalyticsChart } from "@/components/stats/AnalyticsChart";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-type FinancialDataType = {
-  id: string;
-  user_id: string;
-  monthly_salary: number;
-  total_savings: number;
-  monthly_expenditure: number;
-  updated_at: string;
-};
-
-const expenseCategories = [
-  { name: "Housing", value: 2000, color: "#00E6E6" },
-  { name: "Food", value: 800, color: "#F5A623" },
-  { name: "Transport", value: 400, color: "#7C3AED" },
-  { name: "Entertainment", value: 300, color: "#EC4899" },
-  { name: "Others", value: 500, color: "#6366F1" },
-];
-
-const dateRanges = ["7D", "1M", "6M", "1Y", "ALL"];
+type TimeFrame = "1D" | "7D" | "1M" | "6M" | "1Y";
 
 export default function Analytics() {
-  const [selectedRange, setSelectedRange] = useState("1M");
+  const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>("7D");
   
-  const { data: financialData, isLoading } = useQuery({
-    queryKey: ['financial-data'],
+  const { data: aiInsights } = useQuery({
+    queryKey: ['ai-insights'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("financial_data")
-        .select("*")
-        .single();
-      
-      if (error) throw error;
-      return data as FinancialDataType;
+      // In a real app, this would call your AI service
+      return [
+        {
+          type: "warning",
+          title: "Spending Alert",
+          message: "Your entertainment expenses increased by 20% this month. Consider budgeting!",
+        },
+        {
+          type: "success",
+          title: "Savings Opportunity",
+          message: "You've spent less on groceries this week. Keep up the savings!",
+        },
+      ];
     },
   });
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-white">Loading analytics...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const timeFrames: TimeFrame[] = ["1D", "7D", "1M", "6M", "1Y"];
 
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
@@ -80,74 +50,55 @@ export default function Analytics() {
           <div className="flex items-center space-x-2">
             <CalendarIcon className="w-5 h-5 text-white/60" />
             <div className="flex bg-white/5 rounded-lg p-1">
-              {dateRanges.map((range) => (
+              {timeFrames.map((frame) => (
                 <Button
-                  key={range}
+                  key={frame}
                   variant="ghost"
                   className={`px-3 py-1 text-sm ${
-                    selectedRange === range
+                    selectedTimeFrame === frame
                       ? "bg-neon/20 text-neon"
                       : "text-white/60 hover:text-white"
                   }`}
-                  onClick={() => setSelectedRange(range)}
+                  onClick={() => setSelectedTimeFrame(frame)}
                 >
-                  {range}
+                  {frame}
                 </Button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Financial Overview */}
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Income Trend */}
+          {/* Spending Breakdown */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="glass-card p-6"
           >
-            <h3 className="text-xl font-semibold text-white mb-4">Income Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={[
-                { month: 'Jan', amount: financialData?.monthly_salary || 0 },
-                { month: 'Feb', amount: (financialData?.monthly_salary || 0) * 1.02 },
-                { month: 'Mar', amount: (financialData?.monthly_salary || 0) * 1.05 },
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                <XAxis dataKey="month" stroke="#ffffff60" />
-                <YAxis stroke="#ffffff60" />
-                <Tooltip contentStyle={{ background: '#0D1119', border: '1px solid #ffffff20' }} />
-                <Line type="monotone" dataKey="amount" stroke="#00E6E6" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <WalletIcon className="w-6 h-6 text-neon" />
+                <h3 className="text-xl font-semibold text-white">Spending Breakdown</h3>
+              </div>
+            </div>
+            <AnalyticsChart type="spending" timeFrame={selectedTimeFrame} />
           </motion.div>
 
-          {/* Expense Breakdown */}
+          {/* Income Trends */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="glass-card p-6"
           >
-            <h3 className="text-xl font-semibold text-white mb-4">Expense Breakdown</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={expenseCategories}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {expenseCategories.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#0D1119', border: '1px solid #ffffff20' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <TrendingUpIcon className="w-6 h-6 text-neon" />
+                <h3 className="text-xl font-semibold text-white">Income Trends</h3>
+              </div>
+            </div>
+            <AnalyticsChart type="income" timeFrame={selectedTimeFrame} />
           </motion.div>
         </div>
 
@@ -164,19 +115,20 @@ export default function Analytics() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/5 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Spending Pattern</h4>
-              <p className="text-white/60 text-sm">
-                Your housing expenses are 15% higher than average. Consider reviewing your rental or mortgage options.
-              </p>
-            </div>
-
-            <div className="bg-white/5 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Savings Opportunity</h4>
-              <p className="text-white/60 text-sm">
-                Based on your income, you could increase your monthly savings by optimizing entertainment expenses.
-              </p>
-            </div>
+            {aiInsights?.map((insight, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`bg-white/5 rounded-lg p-4 ${
+                  insight.type === "warning" ? "border-l-4 border-yellow-500" : "border-l-4 border-green-500"
+                }`}
+              >
+                <h4 className="text-white font-medium mb-2">{insight.title}</h4>
+                <p className="text-white/60 text-sm">{insight.message}</p>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>

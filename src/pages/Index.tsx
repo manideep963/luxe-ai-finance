@@ -17,6 +17,7 @@ const transactions = [
     status: "success" as const,
     date: "2024-03-20",
     description: "Monthly Salary",
+    tag: "personal" as const,
   },
   {
     id: "2",
@@ -25,6 +26,7 @@ const transactions = [
     status: "pending" as const,
     date: "2024-03-19",
     description: "Netflix Subscription",
+    tag: "personal" as const,
   },
   {
     id: "3",
@@ -33,6 +35,7 @@ const transactions = [
     status: "failed" as const,
     date: "2024-03-18",
     description: "ATM Withdrawal",
+    tag: "personal" as const,
   },
 ];
 

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MessageSquareIcon, MicIcon, SendIcon } from "lucide-react";
@@ -6,12 +5,13 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+const GEMINI_API_KEY = 'AIzaSyDlGusr3wiukIQx0p_Fu4t0EFXC8HpzevE';
 
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,20 +30,9 @@ export default function AIAssistant() {
       // Add user message to chat
       setMessages(prev => [...prev, { role: "user", content: userMessage }]);
 
-      // Fetch the Gemini API key from Supabase secrets
-      const { data, error: secretError } = await supabase
-        .from('secrets')
-        .select('value')
-        .eq('name', 'GEMINI_API_KEY')
-        .maybeSingle();
-
-      if (secretError || !data?.value) {
-        throw new Error("AI service is not configured properly");
-      }
-
-      // Call Gemini API with the retrieved key
+      // Call Gemini API
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${data.value}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -83,7 +72,6 @@ export default function AIAssistant() {
   return (
     <DashboardLayout>
       <div className="space-y-8 h-[calc(100vh-theme(spacing.32))]">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -92,7 +80,6 @@ export default function AIAssistant() {
           <h1 className="text-3xl font-bold text-white">AI Assistant</h1>
         </motion.div>
 
-        {/* Chat Area */}
         <div className="flex flex-col h-full">
           <div className="flex-1 glass-card p-6 mb-6 overflow-y-auto">
             {messages.length === 0 ? (
@@ -110,7 +97,7 @@ export default function AIAssistant() {
                 </p>
                 <ul className="mt-2 space-y-1 text-white/60">
                   <li>• Analyzing your spending patterns</li>
-                  <li>• Providing investment recommendations</li>
+                  <li>��� Providing investment recommendations</li>
                   <li>• Answering financial questions</li>
                   <li>• Creating budget plans</li>
                 </ul>
@@ -146,7 +133,6 @@ export default function AIAssistant() {
             )}
           </div>
 
-          {/* Input Area */}
           <div className="flex items-center space-x-4 glass-card p-4">
             <Button variant="outline" className="glass-card">
               <MicIcon className="w-5 h-5" />

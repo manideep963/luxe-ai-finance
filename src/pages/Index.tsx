@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   DollarSignIcon, 
   PiggyBankIcon, 
-  CreditCardIcon, 
-  ChartBarIcon, 
-  BellIcon, 
-  TrendingUpIcon, 
+  CreditCardIcon,
+  ChartBarIcon,
+  BellIcon,
+  TrendingUpIcon,
   AlertTriangleIcon,
   PlusIcon
 } from "lucide-react";
@@ -20,138 +21,87 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useQuery } from "@tanstack/react-query";
 
-// Mock transactions data
-const mockTransactions = [
-  {
-    id: "1",
-    amount: 2500,
-    type: "deposit" as const,
-    status: "success" as const,
-    date: "2024-03-20",
-    description: "Monthly Salary",
-    tag: "personal" as const,
-  },
-  {
-    id: "2",
-    amount: 85,
-    type: "payment" as const,
-    status: "pending" as const,
-    date: "2024-03-19",
-    description: "Netflix Subscription",
-    tag: "personal" as const,
-  },
-  {
-    id: "3",
-    amount: 150,
-    type: "withdrawal" as const,
-    status: "failed" as const,
-    date: "2024-03-18",
-    description: "ATM Withdrawal",
-    tag: "personal" as const,
-  },
-];
-
-// Weekly spending data example
-const weeklySpendingData = [
-  { day: 'Mon', amount: 120 },
-  { day: 'Tue', amount: 180 },
-  { day: 'Wed', amount: 150 },
-  { day: 'Thu', amount: 220 },
-  { day: 'Fri', amount: 180 },
-  { day: 'Sat', amount: 250 },
-  { day: 'Sun', amount: 170 }
-];
-
-// Upcoming bills example
-const upcomingBills = [
-  { id: 1, name: 'Netflix Subscription', amount: 15.99, dueDate: '2024-03-25' },
-  { id: 2, name: 'Electricity Bill', amount: 120.00, dueDate: '2024-03-28' },
-  { id: 3, name: 'Internet Service', amount: 79.99, dueDate: '2024-04-01' }
-];
-
-const Index = () => {
+export default function Index() {
   const { toast } = useToast();
   const [financialData, setFinancialData] = useState({
     monthly_salary: 0,
     total_savings: 0,
     monthly_expenditure: 0,
-    net_worth: 150000, // Example value
     budget: 3000, // Example monthly budget
   });
-  const [newExpenditure, setNewExpenditure] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const fetchFinancialData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('financial_data')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch financial data",
-      });
-      return;
-    }
-
-    if (data) {
-      setFinancialData(prev => ({
-        ...prev,
-        ...data
-      }));
-    }
-  };
-
-  const handleAddExpenditure = async () => {
-    if (!newExpenditure || loading) return;
-    setLoading(true);
-
-    try {
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ['recent-transactions'],
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error('Not authenticated');
 
-      const amount = parseFloat(newExpenditure);
-      const newTotal = financialData.monthly_expenditure + amount;
-
-      const { error } = await supabase
-        .from('financial_data')
-        .update({ monthly_expenditure: newTotal })
-        .eq('user_id', user.id);
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(3);
 
       if (error) throw error;
+      return data;
+    },
+  });
 
-      setFinancialData(prev => ({
-        ...prev,
-        monthly_expenditure: newTotal
-      }));
+  const { data: monthlyData } = useQuery({
+    queryKey: ['monthly-financial-data'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-      toast({
-        title: "Expenditure added",
-        description: `Added $${amount} to your monthly expenditures.`,
-      });
+      const { data, error } = await supabase
+        .from('financial_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-      setNewExpenditure("");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data) {
+        setFinancialData(prev => ({
+          ...prev,
+          monthly_salary: data.monthly_salary,
+          total_savings: data.total_savings,
+          monthly_expenditure: data.monthly_expenditure,
+        }));
+      }
+    },
+  });
+
+  // Weekly spending data based on actual transactions
+  const calculateWeeklySpending = () => {
+    if (!transactions) return [];
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyData = new Array(7).fill(0).map((_, index) => ({
+      day: days[index],
+      amount: 0
+    }));
+
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    transactions.forEach(transaction => {
+      const transactionDate = new Date(transaction.date);
+      if (transactionDate >= oneWeekAgo && transactionDate <= now) {
+        const dayIndex = transactionDate.getDay();
+        if (transaction.type === 'withdrawal') {
+          weeklyData[dayIndex].amount += transaction.amount;
+        }
+      }
+    });
+
+    return weeklyData;
   };
-
-  useEffect(() => {
-    fetchFinancialData();
-  }, []);
 
   return (
     <DashboardLayout>
@@ -182,40 +132,12 @@ const Index = () => {
             change={{ value: 5.2, trend: "up" }}
             icon={PiggyBankIcon}
           />
-          <Dialog>
-            <DialogTrigger asChild>
-              <div>
-                <StatCard
-                  title="Monthly Expenses"
-                  value={`$${financialData.monthly_expenditure.toFixed(2)}`}
-                  change={{ value: 0.8, trend: "down" }}
-                  icon={CreditCardIcon}
-                />
-              </div>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Expenditure</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={newExpenditure}
-                    onChange={(e) => setNewExpenditure(e.target.value)}
-                  />
-                  <Button 
-                    onClick={handleAddExpenditure}
-                    disabled={loading}
-                  >
-                    <PlusIcon className="w-4 h-4 mr-2" />
-                    Add
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <StatCard
+            title="Monthly Expenses"
+            value={`$${financialData.monthly_expenditure.toFixed(2)}`}
+            change={{ value: 0.8, trend: "down" }}
+            icon={CreditCardIcon}
+          />
         </div>
 
         {/* Weekly Spending Trends */}
@@ -223,7 +145,7 @@ const Index = () => {
           <h3 className="text-xl font-semibold text-white mb-4">Weekly Spending Trends</h3>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={weeklySpendingData}>
+              <LineChart data={calculateWeeklySpending()}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="day" stroke="#ffffff60" />
                 <YAxis stroke="#ffffff60" />
@@ -255,7 +177,11 @@ const Index = () => {
                 <span>Recent Transactions</span>
               </h2>
             </div>
-            <TransactionList transactions={mockTransactions} />
+            {isLoadingTransactions ? (
+              <div>Loading transactions...</div>
+            ) : (
+              <TransactionList transactions={transactions} />
+            )}
           </div>
 
           <div className="lg:col-span-1">
@@ -265,6 +191,4 @@ const Index = () => {
       </div>
     </DashboardLayout>
   );
-};
-
-export default Index;
+}

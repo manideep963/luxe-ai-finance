@@ -69,17 +69,23 @@ export default function Transactions() {
     isRecurring: false
   });
 
-  const { data: transactions, isLoading, refetch } = useQuery<Transaction[]>({
+  const { data: transactions, isLoading, refetch } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      const query = supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
+
+      if (filter !== 'all') {
+        query.eq('type', filter);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as Transaction[];
@@ -157,11 +163,11 @@ export default function Transactions() {
         user_id: user.id
       };
 
-      const { error } = await supabase
+      const { error: transactionError } = await supabase
         .from('transactions')
         .insert(newTransactionData);
 
-      if (error) throw error;
+      if (transactionError) throw transactionError;
 
       const { data: financialData, error: financialError } = await supabase
         .from('financial_data')
@@ -169,20 +175,24 @@ export default function Transactions() {
         .eq('user_id', user.id)
         .single();
 
-      if (!financialError && financialData) {
-        const updates: any = {};
-        
-        if (newTransaction.type === 'deposit') {
-          updates.total_savings = financialData.total_savings + amount;
-          updates.monthly_salary = financialData.monthly_salary + amount;
-        } else {
-          updates.monthly_expenditure = financialData.monthly_expenditure + amount;
-        }
+      if (financialError && financialError.code !== 'PGRST116') throw financialError;
 
+      const updates = {
+        monthly_expenditure: (financialData?.monthly_expenditure || 0) + (newTransaction.type === 'withdrawal' ? amount : 0),
+        total_savings: (financialData?.total_savings || 0) + (newTransaction.type === 'deposit' ? amount : 0),
+        monthly_salary: (financialData?.monthly_salary || 0) + (newTransaction.type === 'deposit' ? amount : 0),
+        user_id: user.id
+      };
+
+      if (financialData) {
         await supabase
           .from('financial_data')
           .update(updates)
           .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('financial_data')
+          .insert(updates);
       }
 
       await refetch();

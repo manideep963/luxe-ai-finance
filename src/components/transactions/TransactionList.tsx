@@ -16,6 +16,7 @@ export interface Transaction {
   tag: "personal" | "business" | "investment";
   category?: string;
   paymentMethod?: string;
+  user_id?: string;
 }
 
 const statusVariants = {

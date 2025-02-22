@@ -6,7 +6,9 @@ import {
   TrendingUpIcon, 
   MessageSquareIcon, 
   SearchIcon,
-  LogInIcon
+  LogInIcon,
+  Settings2Icon,
+  UserRoundIcon
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -48,7 +50,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-midnight flex">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#0D1119] border-r border-white/10">
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-[#0D1119] border-r border-white/10 flex flex-col">
         {/* Logo */}
         <div className="px-6 py-8">
           <h1 className="text-2xl font-bold">
@@ -70,7 +72,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
 
         {/* Navigation Items */}
-        <nav className="px-2">
+        <nav className="px-2 flex-1">
           {navigationItems.map((item) => (
             <Link
               key={item.name}
@@ -82,6 +84,27 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </Link>
           ))}
         </nav>
+
+        {/* Bottom Section with Settings and User Profile */}
+        <div className="px-2 py-4 border-t border-white/10">
+          <Link
+            to="/settings"
+            className="flex items-center space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all duration-200"
+          >
+            <Settings2Icon className="w-5 h-5" />
+            <span className="text-sm font-medium">Settings</span>
+          </Link>
+          
+          <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-white/5">
+            <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple flex items-center justify-center">
+              <UserRoundIcon className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">John Doe</p>
+              <p className="text-xs text-white/60">john@example.com</p>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content */}

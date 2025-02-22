@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -29,8 +28,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFinancialData } from "@/hooks/useFinancialData";
 import { useQuery } from "@tanstack/react-query";
 import type { Transaction } from "@/components/transactions/TransactionList";
+import { FinancialInfoForm } from "@/components/auth/FinancialInfoForm";
 
-// Helper function to calculate weekly spending data
 const calculateWeeklySpending = () => {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return days.map(day => ({
@@ -46,6 +45,15 @@ export default function Index() {
     isLoading: isLoadingFinancial,
     updateFinancialData 
   } = useFinancialData();
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return user;
+    },
+  });
 
   const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['recent-transactions'],
@@ -81,11 +89,18 @@ export default function Index() {
     );
   }
 
-  if (!financialData) {
+  if (!financialData && user) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <p className="text-white/60">No financial data available. Please add your financial information.</p>
+        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+          <div className="w-full max-w-md">
+            <FinancialInfoForm 
+              userId={user.id}
+              onComplete={() => {
+                window.location.reload();
+              }}
+            />
+          </div>
         </div>
       </DashboardLayout>
     );

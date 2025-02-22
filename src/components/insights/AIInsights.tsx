@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { RobotIcon, BrainCircuitIcon, TrendingUpIcon } from "lucide-react";
+import { BotIcon, BrainCircuitIcon, TrendingUpIcon } from "lucide-react";
 
 const insights = [
   {
@@ -19,7 +19,7 @@ export function AIInsights() {
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">
-        <RobotIcon className="w-5 h-5 text-neon" />
+        <BotIcon className="w-5 h-5 text-neon" />
         <h2 className="text-xl font-semibold text-white">AI Insights</h2>
       </div>
       

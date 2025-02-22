@@ -13,10 +13,12 @@ interface FinancialInfoFormProps {
 }
 
 export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps) {
-  const [salary, setSalary] = useState("");
-  const [savings, setSavings] = useState("");
-  const [monthlyExpenditure, setMonthlyExpenditure] = useState("");
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    monthly_salary: "",
+    total_savings: "",
+    monthly_expenditure: "",
+  });
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,9 +30,9 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
         .from("financial_data")
         .upsert({
           user_id: userId,
-          monthly_salary: Number(salary),
-          total_savings: Number(savings),
-          monthly_expenditure: Number(monthlyExpenditure),
+          monthly_salary: Number(formData.monthly_salary),
+          total_savings: Number(formData.total_savings),
+          monthly_expenditure: Number(formData.monthly_expenditure),
           updated_at: new Date().toISOString(),
         });
 
@@ -71,8 +73,8 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
             <Input
               type="number"
               placeholder="Monthly Salary"
-              value={salary}
-              onChange={(e) => setSalary(e.target.value)}
+              value={formData.monthly_salary}
+              onChange={(e) => setFormData(prev => ({ ...prev, monthly_salary: e.target.value }))}
               className="glass-input pl-12"
               required
             />
@@ -83,8 +85,8 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
             <Input
               type="number"
               placeholder="Total Savings"
-              value={savings}
-              onChange={(e) => setSavings(e.target.value)}
+              value={formData.total_savings}
+              onChange={(e) => setFormData(prev => ({ ...prev, total_savings: e.target.value }))}
               className="glass-input pl-12"
               required
             />
@@ -95,8 +97,8 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
             <Input
               type="number"
               placeholder="Average Monthly Expenditure"
-              value={monthlyExpenditure}
-              onChange={(e) => setMonthlyExpenditure(e.target.value)}
+              value={formData.monthly_expenditure}
+              onChange={(e) => setFormData(prev => ({ ...prev, monthly_expenditure: e.target.value }))}
               className="glass-input pl-12"
               required
             />

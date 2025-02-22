@@ -5,16 +5,22 @@ import { StarIcon, LineChartIcon, CandlestickChartIcon, NewspaperIcon } from "lu
 import DashboardLayout from "@/components/DashboardLayout";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+// Using the public API key since it's already exposed in the frontend
+const GEMINI_API_KEY = 'AIzaSyDlGusr3wiukIQx0p_Fu4t0EFXC8HpzevE';
 
 export default function Markets() {
   const [activeTab, setActiveTab] = useState<"stocks" | "crypto">("stocks");
   const [marketNews, setMarketNews] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const getMarketNews = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -23,19 +29,48 @@ export default function Markets() {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Generate 3 latest important financial market news headlines for ${activeTab}. Format as JSON array of strings.`
+                text: `Generate 3 latest important financial market news headlines for ${activeTab} in 2024. Only return the array of headlines, no additional text or formatting.`
               }]
             }]
           })
         }
       );
 
+      if (!response.ok) {
+        throw new Error('Failed to fetch market news');
+      }
+
       const data = await response.json();
-      const newsText = data.candidates[0].content.parts[0].text;
-      const newsArray = JSON.parse(newsText.replace(/```json\n|\n```/g, ''));
-      setMarketNews(newsArray);
+      
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        let newsText = data.candidates[0].content.parts[0].text;
+        // Clean up the response to ensure it's valid JSON
+        newsText = newsText.replace(/```json\n|\n```|```/g, '');
+        try {
+          const newsArray = JSON.parse(newsText);
+          setMarketNews(Array.isArray(newsArray) ? newsArray : [newsText]);
+        } catch (e) {
+          // If JSON parsing fails, split by newlines and clean up
+          const newsArray = newsText.split('\n').filter(line => line.trim());
+          setMarketNews(newsArray);
+        }
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       console.error('Error fetching market news:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch market news. Please try again later.",
+      });
+      setMarketNews([
+        "Market data temporarily unavailable",
+        "Please try again in a few moments",
+        "We're working to restore the service"
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -89,9 +124,14 @@ export default function Markets() {
 
         {/* Latest News Section */}
         <div className="glass-card p-6">
-          <div className="flex items-center space-x-2 mb-6">
-            <NewspaperIcon className="w-6 h-6 text-neon" />
-            <h2 className="text-xl font-semibold text-white">Latest Market News</h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <NewspaperIcon className="w-6 h-6 text-neon" />
+              <h2 className="text-xl font-semibold text-white">Latest Market News</h2>
+            </div>
+            {isLoading && (
+              <div className="text-sm text-white/60">Fetching latest news...</div>
+            )}
           </div>
           <div className="space-y-4">
             {marketNews.map((news, index) => (
@@ -111,8 +151,12 @@ export default function Markets() {
         {/* Market Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="glass-card p-6">
-            <h3 className="text-xl font-semibold text-white mb-4">Coming Soon</h3>
-            <p className="text-white/60">Market data integration in progress...</p>
+            <h3 className="text-xl font-semibold text-white mb-4">Market Overview</h3>
+            <p className="text-white/60">
+              {activeTab === "stocks" 
+                ? "Track major indices and stock performance"
+                : "Monitor cryptocurrency market trends"}
+            </p>
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ export interface Transaction {
   description: string;
   tag: "personal" | "business" | "investment";
   category?: string;
-  paymentMethod?: string;
+  payment_method?: string; // Updated to match database column name
   user_id?: string;
 }
 
@@ -74,9 +74,9 @@ export function TransactionList({
                   {categoryIcons[transaction.category]} {transaction.category}
                 </Badge>
               )}
-              {transaction.paymentMethod && (
+              {transaction.payment_method && (
                 <Badge variant="outline" className="text-xs">
-                  💳 {transaction.paymentMethod}
+                  💳 {transaction.payment_method}
                 </Badge>
               )}
             </div>

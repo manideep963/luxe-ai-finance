@@ -40,7 +40,7 @@ interface NewTransaction {
   amount: string;
   type: TransactionType;
   category: string;
-  paymentMethod: string;
+  payment_method: string;
   date: string;
   isRecurring: boolean;
 }
@@ -75,7 +75,7 @@ export default function Transactions() {
     amount: "",
     type: "withdrawal",
     category: "Other",
-    paymentMethod: "Cash",
+    payment_method: "Cash",
     date: new Date().toISOString().split("T")[0],
     isRecurring: false
   });
@@ -185,7 +185,7 @@ export default function Transactions() {
         date: newTransaction.date,
         description: newTransaction.description,
         category: newTransaction.category,
-        paymentMethod: newTransaction.paymentMethod,
+        payment_method: newTransaction.payment_method,
         tag: "personal" as const,
         user_id: user.id
       };
@@ -194,7 +194,10 @@ export default function Transactions() {
         .from('transactions')
         .insert(newTransactionData);
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Transaction Error:', transactionError);
+        throw transactionError;
+      }
 
       let { data: financialData, error: financialError } = await supabase
         .from('financial_data')
@@ -245,11 +248,12 @@ export default function Transactions() {
         amount: "",
         type: "withdrawal",
         category: "Other",
-        paymentMethod: "Cash",
+        payment_method: "Cash",
         date: new Date().toISOString().split("T")[0],
         isRecurring: false
       });
     } catch (error: any) {
+      console.error('Error details:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add transaction",
@@ -436,8 +440,8 @@ export default function Transactions() {
                 <div>
                   <label className="text-sm text-muted-foreground">Payment Method</label>
                   <select
-                    value={newTransaction.paymentMethod}
-                    onChange={(e) => setNewTransaction(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                    value={newTransaction.payment_method}
+                    onChange={(e) => setNewTransaction(prev => ({ ...prev, payment_method: e.target.value }))}
                     className="w-full p-2 rounded-md border border-input bg-background"
                   >
                     {paymentMethods.map(method => (

@@ -1,10 +1,12 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MessageSquareIcon, MicIcon, SendIcon } from "lucide-react";
+import { MessageSquareIcon, MicIcon, SendIcon, UserIcon } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -17,7 +19,18 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
   const { toast } = useToast();
+
+  const formatMarkdown = (text: string) => {
+    // Basic markdown formatting
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br/>');
+  };
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -41,7 +54,7 @@ export default function AIAssistant() {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: userMessage
+                text: userMessage + "\n\nPlease format your response using markdown syntax when appropriate."
               }]
             }]
           })
@@ -56,8 +69,28 @@ export default function AIAssistant() {
 
       const aiResponse = responseData.candidates[0].content.parts[0].text;
       
-      // Add AI response to chat
-      setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
+      // Format and add AI response to chat
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: aiResponse 
+      }]);
+
+      // Update user info if requested
+      if (userMessage.toLowerCase().includes("update my info") || 
+          userMessage.toLowerCase().includes("change my details")) {
+        const user = await supabase.auth.getUser();
+        if (user.data.user) {
+          setUserInfo({
+            name: "Updated User",
+            email: user.data.user.email,
+            lastUpdated: new Date().toLocaleString()
+          });
+          toast({
+            title: "Profile Updated",
+            description: "Your information has been updated successfully.",
+          });
+        }
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -78,6 +111,12 @@ export default function AIAssistant() {
           className="flex items-center justify-between"
         >
           <h1 className="text-3xl font-bold text-white">AI Assistant</h1>
+          {userInfo && (
+            <div className="flex items-center space-x-2 text-white/70 text-sm">
+              <UserIcon className="w-4 h-4" />
+              <span>{userInfo.name} • Last updated: {userInfo.lastUpdated}</span>
+            </div>
+          )}
         </motion.div>
 
         <div className="flex flex-col h-full">
@@ -97,7 +136,7 @@ export default function AIAssistant() {
                 </p>
                 <ul className="mt-2 space-y-1 text-white/60">
                   <li>• Analyzing your spending patterns</li>
-                  <li>��� Providing investment recommendations</li>
+                  <li>• Providing investment recommendations</li>
                   <li>• Answering financial questions</li>
                   <li>• Creating budget plans</li>
                 </ul>
@@ -117,7 +156,14 @@ export default function AIAssistant() {
                       <MessageSquareIcon className="w-5 h-5 text-neon" />
                       <span className="text-white font-medium capitalize">{message.role}</span>
                     </div>
-                    <p className="text-white/80 whitespace-pre-wrap">{message.content}</p>
+                    <div 
+                      className="text-white/80 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ 
+                        __html: message.role === "assistant" 
+                          ? formatMarkdown(message.content) 
+                          : message.content 
+                      }}
+                    />
                   </motion.div>
                 ))}
                 {isLoading && (

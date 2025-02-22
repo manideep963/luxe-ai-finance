@@ -12,6 +12,37 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+// Mock transactions data
+const mockTransactions = [
+  {
+    id: "1",
+    amount: 2500,
+    type: "deposit" as const,
+    status: "success" as const,
+    date: "2024-03-20",
+    description: "Monthly Salary",
+    tag: "personal" as const,
+  },
+  {
+    id: "2",
+    amount: 85,
+    type: "payment" as const,
+    status: "pending" as const,
+    date: "2024-03-19",
+    description: "Netflix Subscription",
+    tag: "personal" as const,
+  },
+  {
+    id: "3",
+    amount: 150,
+    type: "withdrawal" as const,
+    status: "failed" as const,
+    date: "2024-03-18",
+    description: "ATM Withdrawal",
+    tag: "personal" as const,
+  },
+];
+
 const Index = () => {
   const { toast } = useToast();
   const [financialData, setFinancialData] = useState({
@@ -164,7 +195,7 @@ const Index = () => {
                 <span>Recent Transactions</span>
               </h2>
             </div>
-            <TransactionList transactions={transactions} />
+            <TransactionList transactions={mockTransactions} />
           </div>
 
           <div className="lg:col-span-1">

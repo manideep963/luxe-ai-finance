@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -13,32 +12,20 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { StatCard } from "@/components/stats/StatCard";
-import { TransactionList, type Transaction } from "@/components/transactions/TransactionList";
+import { TransactionList } from "@/components/transactions/TransactionList";
 import { AIInsights } from "@/components/insights/AIInsights";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useFinancialData } from "@/hooks/useFinancialData";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Index() {
   const { toast } = useToast();
-  const [financialData, setFinancialData] = useState({
-    monthly_salary: 0,
-    total_savings: 0,
-    monthly_expenditure: 0,
-    budget: 3000,
-  });
-
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session;
-    },
-  });
+  const { 
+    financialData, 
+    isLoading: isLoadingFinancial,
+    updateFinancialData 
+  } = useFinancialData();
 
   const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['recent-transactions'],
@@ -54,67 +41,19 @@ export default function Index() {
         .limit(3);
 
       if (error) throw error;
-      return data as Transaction[];
-    },
-    enabled: !!session,
-  });
-
-  const { data: monthlyData } = useQuery({
-    queryKey: ['monthly-financial-data'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('financial_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setFinancialData(prev => ({
-          ...prev,
-          monthly_salary: data.monthly_salary || 0,
-          total_savings: data.total_savings || 0,
-          monthly_expenditure: data.monthly_expenditure || 0,
-        }));
-      }
       return data;
     },
-    enabled: !!session,
   });
 
-  const calculateWeeklySpending = () => {
-    if (!transactions) return [];
-    
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const weeklyData = new Array(7).fill(0).map((_, index) => ({
-      day: days[index],
-      amount: 0
-    }));
-
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    transactions.forEach(transaction => {
-      const transactionDate = new Date(transaction.date);
-      if (transactionDate >= oneWeekAgo && transactionDate <= now) {
-        const dayIndex = transactionDate.getDay();
-        if (transaction.type === 'withdrawal') {
-          weeklyData[dayIndex].amount += transaction.amount;
-        }
-      }
-    });
-
-    return weeklyData;
-  };
+  if (isLoadingFinancial) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
@@ -127,21 +66,33 @@ export default function Index() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             title="Monthly Income"
-            value={`$${financialData.monthly_salary.toFixed(2)}`}
+            value={`$${financialData?.monthly_salary.toFixed(2)}`}
             change={{ value: 2.3, trend: "up" }}
             icon={DollarSignIcon}
+            isEditable
+            onEdit={async (newValue) => {
+              await updateFinancialData({ monthly_salary: newValue });
+            }}
           />
           <StatCard
             title="Total Savings"
-            value={`$${financialData.total_savings.toFixed(2)}`}
+            value={`$${financialData?.total_savings.toFixed(2)}`}
             change={{ value: 5.2, trend: "up" }}
             icon={PiggyBankIcon}
+            isEditable
+            onEdit={async (newValue) => {
+              await updateFinancialData({ total_savings: newValue });
+            }}
           />
           <StatCard
             title="Monthly Expenses"
-            value={`$${financialData.monthly_expenditure.toFixed(2)}`}
+            value={`$${financialData?.monthly_expenditure.toFixed(2)}`}
             change={{ value: 0.8, trend: "down" }}
             icon={CreditCardIcon}
+            isEditable
+            onEdit={async (newValue) => {
+              await updateFinancialData({ monthly_expenditure: newValue });
+            }}
           />
         </div>
 

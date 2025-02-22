@@ -1,6 +1,10 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
 
 interface StatCardProps {
   title: string;
@@ -11,28 +15,91 @@ interface StatCardProps {
   };
   icon: React.ComponentType<{ className?: string }>;
   className?: string;
-  onEdit?: () => void;
+  onEdit?: (newValue: number) => Promise<void>;
+  isEditable?: boolean;
 }
 
-export function StatCard({ title, value, change, icon: Icon, className, onEdit }: StatCardProps) {
+export function StatCard({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  className,
+  onEdit,
+  isEditable = false
+}: StatCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+
+  const handleEditStart = () => {
+    setEditValue(value.replace(/[^0-9.]/g, ""));
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!onEdit) return;
+    
+    try {
+      await onEdit(Number(editValue));
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to save:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditValue("");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       className={cn(
-        "glass-card p-6 relative overflow-hidden group cursor-pointer",
+        "glass-card p-6 relative overflow-hidden",
         "border border-white/10 hover:border-neon/30 transition-all duration-300",
         className
       )}
-      onClick={onEdit}
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-neon/10 to-purple/10 blur-3xl rounded-full transform translate-x-16 -translate-y-8 group-hover:translate-x-8 transition-transform duration-500" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-neon/10 to-purple/10 blur-3xl rounded-full transform translate-x-16 -translate-y-8" />
       
       <div className="flex justify-between items-start">
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1">
           <p className="text-white/60 text-sm">{title}</p>
-          <h3 className="text-2xl font-bold text-white">{value}</h3>
+          
+          {isEditing ? (
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                className="w-32"
+                autoFocus
+              />
+              <Button size="sm" variant="ghost" onClick={handleSave}>
+                <CheckIcon className="w-4 h-4 text-green-500" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancel}>
+                <XIcon className="w-4 h-4 text-red-500" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <h3 className="text-2xl font-bold text-white">{value}</h3>
+              {isEditable && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleEditStart}
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          )}
           
           {change && (
             <div className={cn(

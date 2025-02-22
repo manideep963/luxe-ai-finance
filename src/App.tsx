@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
+import Transactions from "./pages/Transactions";
+import Markets from "./pages/Markets";
+import AIAssistant from "./pages/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +24,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/markets" element={<Markets />} />
+          <Route path="/ai-assistant" element={<AIAssistant />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

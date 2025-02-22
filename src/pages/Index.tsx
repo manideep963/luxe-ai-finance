@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -10,6 +11,15 @@ import {
   AlertTriangleIcon,
   PlusIcon
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 import DashboardLayout from "@/components/DashboardLayout";
 import { StatCard } from "@/components/stats/StatCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
@@ -18,6 +28,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useFinancialData } from "@/hooks/useFinancialData";
 import { useQuery } from "@tanstack/react-query";
+import type { Transaction } from "@/components/transactions/TransactionList";
+
+// Helper function to calculate weekly spending data
+const calculateWeeklySpending = () => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return days.map(day => ({
+    day,
+    amount: Math.floor(Math.random() * 1000) // Placeholder data - replace with actual data
+  }));
+};
 
 export default function Index() {
   const { toast } = useToast();
@@ -41,7 +61,14 @@ export default function Index() {
         .limit(3);
 
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match the Transaction type
+      return (data || []).map(transaction => ({
+        ...transaction,
+        type: transaction.type as Transaction['type'], // Cast to the correct type
+        status: transaction.status as Transaction['status'],
+        tag: transaction.tag as Transaction['tag']
+      })) as Transaction[];
     },
   });
 

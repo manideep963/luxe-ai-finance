@@ -249,7 +249,7 @@ const Bills = () => {
                         {bill.type === "subscription" ? `${bill.frequency} subscription` : "one-time"}
                       </Badge>
                       {bill.paid && (
-                        <Badge variant="success" className="bg-[#28A745] text-white">
+                        <Badge variant="secondary" className="bg-[#28A745] text-white">
                           Paid
                         </Badge>
                       )}

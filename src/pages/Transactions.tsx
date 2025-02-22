@@ -9,32 +9,29 @@ import {
   SlidersHorizontalIcon
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { TransactionList } from "@/components/transactions/TransactionList";
+import { TransactionList, type TransactionType } from "@/components/transactions/TransactionList";
+import type { Transaction } from "@/components/transactions/TransactionList";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select } from "@/components/ui/select";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { v4 as uuidv4 } from 'uuid';
-import type { Transaction } from "@/components/transactions/TransactionList";
 
-type TransactionFilter = "all" | "deposit" | "withdrawal" | "payment";
+type TransactionFilter = "all" | TransactionType;
 type DateRange = "all" | "today" | "week" | "month" | "custom";
 
-interface Transaction {
-  id: string;
-  amount: number;
-  type: "deposit" | "withdrawal" | "payment";
-  status: "success" | "pending" | "failed";
-  date: string;
+interface NewTransaction {
   description: string;
-  tag: "personal" | "business" | "investment";
-  category?: string;
-  paymentMethod?: string;
+  amount: string;
+  type: TransactionType;
+  category: string;
+  paymentMethod: string;
+  date: string;
+  isRecurring: boolean;
 }
 
 const categories = [
@@ -62,10 +59,10 @@ export default function Transactions() {
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const [newTransaction, setNewTransaction] = useState({
+  const [newTransaction, setNewTransaction] = useState<NewTransaction>({
     description: "",
     amount: "",
-    type: "withdrawal" as const,
+    type: "withdrawal",
     category: "Other",
     paymentMethod: "Cash",
     date: new Date().toISOString().split("T")[0],
@@ -264,7 +261,10 @@ export default function Transactions() {
                     <label className="text-sm text-muted-foreground">Type</label>
                     <select
                       value={newTransaction.type}
-                      onChange={(e) => setNewTransaction(prev => ({ ...prev, type: e.target.value as "withdrawal" | "deposit" }))}
+                      onChange={(e) => setNewTransaction(prev => ({ 
+                        ...prev, 
+                        type: e.target.value as TransactionType 
+                      }))}
                       className="w-full p-2 rounded-md border border-input bg-background"
                     >
                       <option value="withdrawal">Expense</option>

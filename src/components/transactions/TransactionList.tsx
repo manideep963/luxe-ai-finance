@@ -1,12 +1,15 @@
+
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpIcon, ArrowDownIcon, CreditCardIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export type TransactionType = "deposit" | "withdrawal" | "payment";
+
 export interface Transaction {
   id: string;
   amount: number;
-  type: "deposit" | "withdrawal" | "payment";
+  type: TransactionType;
   status: "success" | "pending" | "failed";
   date: string;
   description: string;

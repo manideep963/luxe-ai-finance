@@ -2,7 +2,7 @@
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { TrendingUpIcon, TrendingDownIcon, DollarSignIcon } from "lucide-react";
+import { TrendingUpIcon, TrendingDownIcon, DollarSignIcon, ChartBarIcon } from "lucide-react";
 
 const Index = () => {
   const { toast } = useToast();

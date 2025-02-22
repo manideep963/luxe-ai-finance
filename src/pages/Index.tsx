@@ -246,33 +246,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Upcoming Bills */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-white">Upcoming Bills</h3>
-            <Button variant="outline" size="sm">
-              <BellIcon className="w-4 h-4 mr-2" />
-              Set Reminders
-            </Button>
-          </div>
-          <div className="space-y-4">
-            {upcomingBills.map(bill => (
-              <div key={bill.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5">
-                <div>
-                  <p className="text-white font-medium">{bill.name}</p>
-                  <p className="text-white/60 text-sm">Due: {new Date(bill.dueDate).toLocaleDateString()}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-white font-medium">${bill.amount.toFixed(2)}</p>
-                  <Button variant="link" size="sm" className="text-neon">
-                    Pay Now
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

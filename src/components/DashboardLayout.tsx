@@ -8,24 +8,35 @@ import {
   SearchIcon,
   LogInIcon,
   Settings2Icon,
-  UserRoundIcon
+  UserRoundIcon,
+  BellIcon,
+  SunIcon,
+  MoonIcon
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const navigationItems = [
   { name: "Home", icon: HomeIcon, path: "/" },
   { name: "Analytics", icon: LineChartIcon, path: "/analytics" },
   { name: "Transactions", icon: CreditCardIcon, path: "/transactions" },
   { name: "Markets", icon: TrendingUpIcon, path: "/markets" },
+  { name: "Upcoming Bills", icon: BellIcon, path: "/bills" },
   { name: "AI Assistant", icon: MessageSquareIcon, path: "/ai-assistant" },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle('light-mode');
+  };
 
   const handleSignOut = async () => {
     try {
@@ -87,6 +98,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
         {/* Bottom Section with Settings and User Profile */}
         <div className="px-2 py-4 border-t border-white/10">
+          <Button
+            onClick={toggleDarkMode}
+            variant="ghost"
+            className="w-full flex items-center justify-start space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+          >
+            {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+            <span className="text-sm font-medium">
+              {isDarkMode ? "Light Mode" : "Dark Mode"}
+            </span>
+          </Button>
+          
           <Link
             to="/settings"
             className="flex items-center space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all duration-200"
@@ -111,19 +133,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex-1 ml-64">
         {/* Top Navigation */}
         <nav className="glass-card sticky top-0 z-50 px-6 py-4 flex items-center justify-end border-b border-white/10">
-          <div className="flex items-center space-x-4">
-            <button className="p-2 hover-glow rounded-lg">
-              <MessageSquareIcon className="w-5 h-5 text-white/70 hover:text-white transition-colors" />
-            </button>
-            <Button
-              variant="outline"
-              className="glass-input hover:bg-white/10 flex items-center space-x-2"
-              onClick={() => navigate('/auth')}
-            >
-              <LogInIcon className="w-4 h-4" />
-              <span>Sign In</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="glass-input hover:bg-white/10 flex items-center space-x-2"
+            onClick={handleSignOut}
+          >
+            <LogInIcon className="w-4 h-4" />
+            <span>Sign Out</span>
+          </Button>
         </nav>
 
         {/* Page Content */}

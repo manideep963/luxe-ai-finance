@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { StatCard } from "@/components/stats/StatCard";
-import { TransactionList } from "@/components/transactions/TransactionList";
+import { TransactionList, type Transaction } from "@/components/transactions/TransactionList";
 import { AIInsights } from "@/components/insights/AIInsights";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";

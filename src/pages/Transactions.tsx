@@ -9,7 +9,7 @@ import {
   SlidersHorizontalIcon
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { TransactionList, type TransactionType } from "@/components/transactions/TransactionList";
+import { TransactionList, type Transaction, type TransactionType } from "@/components/transactions/TransactionList";
 import type { Transaction } from "@/components/transactions/TransactionList";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -329,42 +329,44 @@ export default function Transactions() {
 
   const COLORS = ['#34D399', '#3B82F6', '#F97316', '#8B5CF6', '#A855F7'];
 
-  const TransactionListItem = ({ transaction }: { transaction: Transaction }) => (
+  const renderTransactionItem = (transaction: Transaction) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="glass-card p-4 hover:border-primary/30 transition-all duration-300"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">{transaction.description}</h2>
-        <div className="flex items-center space-x-2">
-          <p className="text-foreground">${transaction.amount}</p>
-          <Badge variant="outline" className="text-foreground">
-            {transaction.type}
-          </Badge>
+        <div className="flex items-center space-x-4">
+          <h2 className="text-lg font-semibold text-foreground">{transaction.description}</h2>
+          <div className="flex items-center space-x-2">
+            <p className="text-foreground">${transaction.amount}</p>
+            <Badge variant="outline" className="text-foreground">
+              {transaction.type}
+            </Badge>
+          </div>
         </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+              <Trash2Icon className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this transaction? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-            <Trash2Icon className="h-4 w-4" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this transaction? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </motion.div>
   );
 
@@ -562,9 +564,9 @@ export default function Transactions() {
           <div className="text-muted-foreground">Loading transactions...</div>
         ) : (
           <TransactionList 
-            transactions={filteredTransactions}
+            transactions={filteredTransactions} 
             onExport={handleExport}
-            TransactionListItem={TransactionListItem}
+            renderItem={renderTransactionItem}
           />
         )}
       </div>

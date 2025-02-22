@@ -6,11 +6,11 @@ import {
   DownloadIcon, 
   PlusIcon,
   SearchIcon,
-  SlidersHorizontalIcon
+  SlidersHorizontalIcon,
+  Trash2Icon
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { TransactionList, type Transaction, type TransactionType } from "@/components/transactions/TransactionList";
-import type { Transaction } from "@/components/transactions/TransactionList";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +31,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2Icon } from "lucide-react";
 
 type TransactionFilter = "all" | TransactionType;
 type DateRange = "all" | "today" | "week" | "month" | "custom";

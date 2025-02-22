@@ -2,20 +2,41 @@
 import { motion } from "framer-motion";
 import { BotIcon, BrainCircuitIcon, TrendingUpIcon } from "lucide-react";
 
-const insights = [
-  {
-    title: "Savings Opportunity",
-    description: "Based on your spending patterns, you could save an additional $420 monthly by optimizing your subscriptions.",
-    icon: TrendingUpIcon,
-  },
-  {
-    title: "Investment Suggestion",
-    description: "Your risk profile suggests a 60/40 split between stocks and bonds would be optimal.",
-    icon: BrainCircuitIcon,
-  },
-];
+interface FinancialData {
+  monthly_salary: number;
+  total_savings: number;
+  monthly_expenditure: number;
+}
 
-export function AIInsights() {
+interface AIInsightsProps {
+  financialData: FinancialData;
+}
+
+export function AIInsights({ financialData }: AIInsightsProps) {
+  const savingsRate = ((financialData.total_savings / financialData.monthly_salary) * 100).toFixed(1);
+  const expenseRatio = ((financialData.monthly_expenditure / financialData.monthly_salary) * 100).toFixed(1);
+
+  const insights = [
+    {
+      title: "Savings Analysis",
+      description: `Your savings rate is ${savingsRate}% of your monthly income. ${
+        parseFloat(savingsRate) < 20 
+          ? "Consider increasing your savings to reach the recommended 20% target."
+          : "Great job maintaining a healthy savings rate!"
+      }`,
+      icon: TrendingUpIcon,
+    },
+    {
+      title: "Expense Management",
+      description: `Your monthly expenses are ${expenseRatio}% of your income. ${
+        parseFloat(expenseRatio) > 70
+          ? "Try to reduce expenses to maintain financial health."
+          : "You're managing your expenses well!"
+      }`,
+      icon: BrainCircuitIcon,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -106,6 +107,13 @@ export default function Index() {
     );
   }
 
+  const defaultFinancialData = {
+    monthly_salary: 0,
+    total_savings: 0,
+    monthly_expenditure: 0,
+    ...financialData
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
@@ -123,7 +131,7 @@ export default function Index() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             title="Monthly Income"
-            value={`$${financialData.monthly_salary.toFixed(2)}`}
+            value={`$${defaultFinancialData.monthly_salary.toFixed(2)}`}
             change={{ value: 2.3, trend: "up" }}
             icon={DollarSignIcon}
             isEditable
@@ -133,7 +141,7 @@ export default function Index() {
           />
           <StatCard
             title="Total Savings"
-            value={`$${financialData.total_savings.toFixed(2)}`}
+            value={`$${defaultFinancialData.total_savings.toFixed(2)}`}
             change={{ value: 5.2, trend: "up" }}
             icon={PiggyBankIcon}
             isEditable
@@ -143,7 +151,7 @@ export default function Index() {
           />
           <StatCard
             title="Monthly Expenses"
-            value={`$${financialData.monthly_expenditure.toFixed(2)}`}
+            value={`$${defaultFinancialData.monthly_expenditure.toFixed(2)}`}
             change={{ value: 0.8, trend: "down" }}
             icon={CreditCardIcon}
             isEditable
@@ -196,7 +204,7 @@ export default function Index() {
           </div>
 
           <div className="lg:col-span-1">
-            <AIInsights financialData={financialData} />
+            <AIInsights financialData={defaultFinancialData} />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpIcon, ArrowDownIcon, CreditCardIcon } from "lucide-react";
+import { ArrowUpIcon, ArrowDownIcon, CreditCardIcon, RepeatIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type TransactionType = "deposit" | "withdrawal" | "payment";
@@ -15,7 +15,9 @@ export interface Transaction {
   description: string;
   tag: "personal" | "business" | "investment";
   category?: string;
-  payment_method?: string; // Updated to match database column name
+  payment_method?: string;
+  is_recurring?: boolean;
+  recurrence_interval?: string;
   user_id?: string;
 }
 
@@ -64,7 +66,12 @@ export function TransactionList({
             {transaction.type === "payment" && <CreditCardIcon className="w-5 h-5 text-primary" />}
           </div>
           <div>
-            <p className="text-foreground font-medium">{transaction.description}</p>
+            <div className="flex items-center space-x-2">
+              <p className="text-foreground font-medium">{transaction.description}</p>
+              {transaction.is_recurring && (
+                <RepeatIcon className="w-4 h-4 text-primary" />
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <span className="text-muted-foreground text-sm">
                 {new Date(transaction.date).toLocaleDateString()}
@@ -105,7 +112,7 @@ export function TransactionList({
 
   return (
     <div className="space-y-4">
-      {transactions.map((transaction, index) => (
+      {transactions.map((transaction) => (
         <div key={transaction.id}>
           {renderItem ? renderItem(transaction) : defaultRenderItem(transaction)}
         </div>

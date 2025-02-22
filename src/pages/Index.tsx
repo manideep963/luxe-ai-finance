@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -29,7 +28,15 @@ export default function Index() {
     monthly_salary: 0,
     total_savings: 0,
     monthly_expenditure: 0,
-    budget: 3000, // Example monthly budget
+    budget: 3000,
+  });
+
+  const { data: session } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    },
   });
 
   const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
@@ -46,8 +53,9 @@ export default function Index() {
         .limit(3);
 
       if (error) throw error;
-      return data;
+      return data as Transaction[];
     },
+    enabled: !!session,
   });
 
   const { data: monthlyData } = useQuery({
@@ -63,21 +71,19 @@ export default function Index() {
         .single();
 
       if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
       if (data) {
         setFinancialData(prev => ({
           ...prev,
-          monthly_salary: data.monthly_salary,
-          total_savings: data.total_savings,
-          monthly_expenditure: data.monthly_expenditure,
+          monthly_salary: data.monthly_salary || 0,
+          total_savings: data.total_savings || 0,
+          monthly_expenditure: data.monthly_expenditure || 0,
         }));
       }
+      return data;
     },
+    enabled: !!session,
   });
 
-  // Weekly spending data based on actual transactions
   const calculateWeeklySpending = () => {
     if (!transactions) return [];
     
@@ -106,7 +112,6 @@ export default function Index() {
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
-        {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,7 +123,6 @@ export default function Index() {
           <p className="text-white/60 mt-2">Track your financial health and upcoming bills</p>
         </motion.div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             title="Monthly Income"
@@ -140,7 +144,6 @@ export default function Index() {
           />
         </div>
 
-        {/* Weekly Spending Trends */}
         <div className="glass-card p-6">
           <h3 className="text-xl font-semibold text-white mb-4">Weekly Spending Trends</h3>
           <div className="h-[200px]">
@@ -168,7 +171,6 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">

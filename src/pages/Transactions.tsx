@@ -20,6 +20,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2Icon } from "lucide-react";
 
 type TransactionFilter = "all" | TransactionType;
 type DateRange = "all" | "today" | "week" | "month" | "custom";
@@ -69,6 +81,14 @@ export default function Transactions() {
     isRecurring: false
   });
 
+  const { data: session } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    },
+  });
+
   const { data: transactions, isLoading, refetch } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
@@ -86,10 +106,11 @@ export default function Transactions() {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
       return data as Transaction[];
     },
+    enabled: !!session,
+    retry: 1,
   });
 
   const filteredTransactions = transactions?.filter(transaction => {
@@ -148,7 +169,14 @@ export default function Transactions() {
       }
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in to add transactions",
+          variant: "destructive"
+        });
+        return;
+      }
 
       const newTransactionData = {
         id: uuidv4(),
@@ -169,37 +197,48 @@ export default function Transactions() {
 
       if (transactionError) throw transactionError;
 
-      const { data: financialData, error: financialError } = await supabase
+      let { data: financialData, error: financialError } = await supabase
         .from('financial_data')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (financialError && financialError.code !== 'PGRST116') throw financialError;
+      if (financialError && financialError.code === 'PGRST116') {
+        const initialData = {
+          user_id: user.id,
+          monthly_expenditure: 0,
+          total_savings: 0,
+          monthly_salary: 0
+        };
+
+        const { data, error } = await supabase
+          .from('financial_data')
+          .insert(initialData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        financialData = data;
+      } else if (financialError) {
+        throw financialError;
+      }
 
       const updates = {
         monthly_expenditure: (financialData?.monthly_expenditure || 0) + (newTransaction.type === 'withdrawal' ? amount : 0),
         total_savings: (financialData?.total_savings || 0) + (newTransaction.type === 'deposit' ? amount : 0),
         monthly_salary: (financialData?.monthly_salary || 0) + (newTransaction.type === 'deposit' ? amount : 0),
-        user_id: user.id
       };
 
-      if (financialData) {
-        await supabase
-          .from('financial_data')
-          .update(updates)
-          .eq('user_id', user.id);
-      } else {
-        await supabase
-          .from('financial_data')
-          .insert(updates);
-      }
+      await supabase
+        .from('financial_data')
+        .update(updates)
+        .eq('user_id', user.id);
 
       await refetch();
 
       toast({
-        title: "Transaction Added",
-        description: "Your transaction has been recorded successfully"
+        title: "Success",
+        description: "Transaction added successfully"
       });
 
       setNewTransaction({
@@ -214,8 +253,68 @@ export default function Transactions() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to add transaction",
         variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: transaction, error: getError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', transactionId)
+        .single();
+
+      if (getError) throw getError;
+
+      const { error: deleteError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionId);
+
+      if (deleteError) throw deleteError;
+
+      const { data: financialData, error: financialError } = await supabase
+        .from('financial_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!financialError && financialData && transaction) {
+        const updates = {
+          monthly_expenditure: transaction.type === 'withdrawal' 
+            ? financialData.monthly_expenditure - transaction.amount 
+            : financialData.monthly_expenditure,
+          total_savings: transaction.type === 'deposit' 
+            ? financialData.total_savings - transaction.amount 
+            : financialData.total_savings,
+          monthly_salary: transaction.type === 'deposit' 
+            ? financialData.monthly_salary - transaction.amount 
+            : financialData.monthly_salary,
+        };
+
+        await supabase
+          .from('financial_data')
+          .update(updates)
+          .eq('user_id', user.id);
+      }
+
+      await refetch();
+
+      toast({
+        title: "Transaction Deleted",
+        description: "Transaction has been successfully deleted",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
     }
   };
@@ -229,6 +328,45 @@ export default function Transactions() {
   };
 
   const COLORS = ['#34D399', '#3B82F6', '#F97316', '#8B5CF6', '#A855F7'];
+
+  const TransactionListItem = ({ transaction }: { transaction: Transaction }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-4 hover:border-primary/30 transition-all duration-300"
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">{transaction.description}</h2>
+        <div className="flex items-center space-x-2">
+          <p className="text-foreground">${transaction.amount}</p>
+          <Badge variant="outline" className="text-foreground">
+            {transaction.type}
+          </Badge>
+        </div>
+      </div>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+            <Trash2Icon className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this transaction? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </motion.div>
+  );
 
   return (
     <DashboardLayout>
@@ -426,6 +564,7 @@ export default function Transactions() {
           <TransactionList 
             transactions={filteredTransactions}
             onExport={handleExport}
+            TransactionListItem={TransactionListItem}
           />
         )}
       </div>

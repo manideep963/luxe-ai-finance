@@ -9,10 +9,22 @@ interface FinancialData {
 }
 
 interface AIInsightsProps {
-  financialData: FinancialData;
+  financialData?: FinancialData;
 }
 
 export function AIInsights({ financialData }: AIInsightsProps) {
+  if (!financialData) {
+    return (
+      <div className="glass-card p-4">
+        <div className="flex items-center space-x-2">
+          <BotIcon className="w-5 h-5 text-neon" />
+          <h2 className="text-xl font-semibold text-white">AI Insights</h2>
+        </div>
+        <p className="text-white/60 mt-4">Loading financial insights...</p>
+      </div>
+    );
+  }
+
   const savingsRate = ((financialData.total_savings / financialData.monthly_salary) * 100).toFixed(1);
   const expenseRatio = ((financialData.monthly_expenditure / financialData.monthly_salary) * 100).toFixed(1);
 

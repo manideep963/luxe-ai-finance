@@ -62,10 +62,9 @@ export default function Index() {
 
       if (error) throw error;
       
-      // Transform the data to match the Transaction type
       return (data || []).map(transaction => ({
         ...transaction,
-        type: transaction.type as Transaction['type'], // Cast to the correct type
+        type: transaction.type as Transaction['type'],
         status: transaction.status as Transaction['status'],
         tag: transaction.tag as Transaction['tag']
       })) as Transaction[];
@@ -73,7 +72,23 @@ export default function Index() {
   });
 
   if (isLoadingFinancial) {
-    return <div>Loading...</div>;
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-white/60">Loading financial data...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!financialData) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-white/60">No financial data available. Please add your financial information.</p>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -93,7 +108,7 @@ export default function Index() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             title="Monthly Income"
-            value={`$${financialData?.monthly_salary.toFixed(2)}`}
+            value={`$${financialData.monthly_salary.toFixed(2)}`}
             change={{ value: 2.3, trend: "up" }}
             icon={DollarSignIcon}
             isEditable
@@ -103,7 +118,7 @@ export default function Index() {
           />
           <StatCard
             title="Total Savings"
-            value={`$${financialData?.total_savings.toFixed(2)}`}
+            value={`$${financialData.total_savings.toFixed(2)}`}
             change={{ value: 5.2, trend: "up" }}
             icon={PiggyBankIcon}
             isEditable
@@ -113,7 +128,7 @@ export default function Index() {
           />
           <StatCard
             title="Monthly Expenses"
-            value={`$${financialData?.monthly_expenditure.toFixed(2)}`}
+            value={`$${financialData.monthly_expenditure.toFixed(2)}`}
             change={{ value: 0.8, trend: "down" }}
             icon={CreditCardIcon}
             isEditable

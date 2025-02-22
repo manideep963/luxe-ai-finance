@@ -2,24 +2,49 @@
 import { 
   HomeIcon, 
   LineChartIcon, 
-  WalletIcon, 
   CreditCardIcon, 
   TrendingUpIcon, 
   MessageSquareIcon, 
-  SearchIcon
+  SearchIcon,
+  LogInIcon
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const navigationItems = [
   { name: "Home", icon: HomeIcon, path: "/" },
   { name: "Analytics", icon: LineChartIcon, path: "/analytics" },
-  { name: "Wallet", icon: WalletIcon, path: "/wallet" },
   { name: "Transactions", icon: CreditCardIcon, path: "/transactions" },
   { name: "Markets", icon: TrendingUpIcon, path: "/markets" },
   { name: "AI Assistant", icon: MessageSquareIcon, path: "/ai-assistant" },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Signed out successfully",
+        description: "Come back soon!",
+      });
+      
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-midnight flex">
       {/* Sidebar */}
@@ -67,10 +92,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <button className="p-2 hover-glow rounded-lg">
               <MessageSquareIcon className="w-5 h-5 text-white/70 hover:text-white transition-colors" />
             </button>
-            <div className="glass-card px-4 py-2 rounded-full flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-neon to-purple" />
-              <span className="text-white/90">John Doe</span>
-            </div>
+            <Button
+              variant="outline"
+              className="glass-input hover:bg-white/10 flex items-center space-x-2"
+              onClick={() => navigate('/auth')}
+            >
+              <LogInIcon className="w-4 h-4" />
+              <span>Sign In</span>
+            </Button>
           </div>
         </nav>
 

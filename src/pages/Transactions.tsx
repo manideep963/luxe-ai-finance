@@ -4,7 +4,10 @@ import { motion } from "framer-motion";
 import { 
   PlusIcon,
   SearchIcon,
-  Trash2Icon
+  Trash2Icon,
+  BellIcon,
+  CheckCircle2Icon,
+  CalendarIcon
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { TransactionList, type Transaction, type TransactionType } from "@/components/transactions/TransactionList";
@@ -15,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { v4 as uuidv4 } from 'uuid';
 import { 
   AlertDialog,
@@ -66,6 +70,7 @@ export default function Transactions() {
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [newTransaction, setNewTransaction] = useState<NewTransaction>({
     description: "",
@@ -155,6 +160,7 @@ export default function Transactions() {
         date: new Date().toISOString().split("T")[0],
         isRecurring: false
       });
+      setIsDialogOpen(false);
     } catch (error: any) {
       console.error('Error details:', error);
       toast({
@@ -166,12 +172,6 @@ export default function Transactions() {
       setIsAddingTransaction(false);
     }
   };
-
-  const filteredTransactions = transactions?.filter(transaction => {
-    const matchesSearch = transaction.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || transaction.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
 
   return (
     <DashboardLayout>
@@ -186,74 +186,108 @@ export default function Transactions() {
             <p className="text-muted-foreground mt-2">Manage and track your financial activities</p>
           </div>
           
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-neon hover:bg-neon/90">
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Transaction
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Transaction</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <Input
-                  placeholder="Description"
-                  value={newTransaction.description}
-                  onChange={(e) => setNewTransaction(prev => ({ ...prev, description: e.target.value }))}
-                />
-                <Input
-                  type="number"
-                  placeholder="Amount"
-                  value={newTransaction.amount}
-                  onChange={(e) => setNewTransaction(prev => ({ ...prev, amount: e.target.value }))}
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Description</label>
+                  <Input
+                    placeholder="Enter transaction description"
+                    value={newTransaction.description}
+                    onChange={(e) => setNewTransaction(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Amount</label>
+                  <Input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={newTransaction.amount}
+                    onChange={(e) => setNewTransaction(prev => ({ ...prev, amount: e.target.value }))}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground">Type</label>
-                    <select
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Type</label>
+                    <Select
                       value={newTransaction.type}
-                      onChange={(e) => setNewTransaction(prev => ({ 
-                        ...prev, 
-                        type: e.target.value as TransactionType 
-                      }))}
-                      className="w-full p-2 rounded-md border border-input bg-background"
+                      onValueChange={(value: TransactionType) => 
+                        setNewTransaction(prev => ({ ...prev, type: value }))
+                      }
                     >
-                      <option value="withdrawal">Expense</option>
-                      <option value="deposit">Income</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="withdrawal">Expense</SelectItem>
+                        <SelectItem value="deposit">Income</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Category</label>
-                    <select
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Category</label>
+                    <Select
                       value={newTransaction.category}
-                      onChange={(e) => setNewTransaction(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full p-2 rounded-md border border-input bg-background"
+                      onValueChange={(value) => 
+                        setNewTransaction(prev => ({ ...prev, category: value }))
+                      }
                     >
-                      {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Payment Method</label>
-                  <select
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Payment Method</label>
+                  <Select
                     value={newTransaction.payment_method}
-                    onChange={(e) => setNewTransaction(prev => ({ ...prev, payment_method: e.target.value }))}
-                    className="w-full p-2 rounded-md border border-input bg-background"
+                    onValueChange={(value) => 
+                      setNewTransaction(prev => ({ ...prev, payment_method: value }))
+                    }
                   >
-                    {paymentMethods.map(method => (
-                      <option key={method} value={method}>{method}</option>
-                    ))}
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map(method => (
+                        <SelectItem key={method} value={method}>
+                          {method}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Input
-                  type="date"
-                  value={newTransaction.date}
-                  onChange={(e) => setNewTransaction(prev => ({ ...prev, date: e.target.value }))}
-                />
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Date</label>
+                  <Input
+                    type="date"
+                    value={newTransaction.date}
+                    onChange={(e) => setNewTransaction(prev => ({ ...prev, date: e.target.value }))}
+                  />
+                </div>
+
                 <Button 
                   onClick={handleAddTransaction} 
                   className="w-full"
@@ -303,33 +337,37 @@ export default function Transactions() {
                 key={transaction.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-4 hover:border-primary/30 transition-all duration-300"
+                className="glass-card p-6"
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">{transaction.description}</h2>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="outline">
-                        {transaction.category}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-xl font-semibold text-foreground">
+                        {transaction.description}
+                      </h3>
+                      <Badge variant={transaction.type === "deposit" ? "secondary" : "outline"}>
+                        {transaction.type === "deposit" ? "Income" : "Expense"}
                       </Badge>
-                      <Badge variant="outline">
-                        {transaction.payment_method}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(transaction.date).toLocaleDateString()}
-                      </span>
+                    </div>
+                    <p className="text-muted-foreground">
+                      {new Date(transaction.date).toLocaleDateString()}
+                    </p>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Badge variant="outline">{transaction.category}</Badge>
+                      <Badge variant="outline">{transaction.payment_method}</Badge>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className={`text-lg font-semibold ${
+                  <div className="text-right space-y-3">
+                    <p className={`text-2xl font-bold ${
                       transaction.type === 'deposit' ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {transaction.type === 'deposit' ? '+' : '-'}${Math.abs(transaction.amount)}
-                    </span>
+                      {transaction.type === 'deposit' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
+                    </p>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-                          <Trash2Icon className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600">
+                          <Trash2Icon className="w-4 h-4 mr-2" />
+                          Delete
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>

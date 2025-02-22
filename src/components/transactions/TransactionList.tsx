@@ -1,6 +1,8 @@
 
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { ArrowUpIcon, ArrowDownIcon, CreditCardIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Transaction {
   id: string;
@@ -11,15 +13,32 @@ interface Transaction {
   description: string;
   tag: "personal" | "business" | "investment";
   category?: string;
+  paymentMethod?: string;
 }
 
-const statusColors = {
-  success: "bg-green-500/20 text-green-400 border-green-500/30",
-  pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  failed: "bg-red-500/20 text-red-400 border-red-500/30",
+const statusVariants = {
+  success: "border-green-500 bg-green-500/10 text-green-500",
+  pending: "border-yellow-500 bg-yellow-500/10 text-yellow-500",
+  failed: "border-red-500 bg-red-500/10 text-red-500",
 };
 
-export function TransactionList({ transactions }: { transactions: Transaction[] }) {
+const categoryIcons: Record<string, string> = {
+  Food: "🍽️",
+  Travel: "✈️",
+  Shopping: "🛍️",
+  Entertainment: "🎬",
+  Utilities: "⚡",
+  Rent: "🏠",
+  Other: "📦",
+};
+
+export function TransactionList({ 
+  transactions,
+  onExport
+}: { 
+  transactions: Transaction[];
+  onExport?: (format: "csv" | "pdf") => void;
+}) {
   return (
     <div className="space-y-4">
       {transactions.map((transaction, index) => (
@@ -28,25 +47,51 @@ export function TransactionList({ transactions }: { transactions: Transaction[] 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className="glass-card p-4 hover:border-neon/30 transition-all duration-300"
+          className="glass-card p-4 hover:border-primary/30 transition-all duration-300"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-2 rounded-full bg-gradient-to-br from-neon/10 to-purple/10">
-                {transaction.type === "deposit" && "↓"}
-                {transaction.type === "withdrawal" && "↑"}
-                {transaction.type === "payment" && "→"}
+              <div className={cn(
+                "p-2 rounded-full",
+                transaction.type === "deposit" ? "bg-green-500/10" : "bg-red-500/10"
+              )}>
+                {transaction.type === "deposit" && <ArrowDownIcon className="w-5 h-5 text-green-500" />}
+                {transaction.type === "withdrawal" && <ArrowUpIcon className="w-5 h-5 text-red-500" />}
+                {transaction.type === "payment" && <CreditCardIcon className="w-5 h-5 text-primary" />}
               </div>
               <div>
-                <p className="text-white font-medium">{transaction.description}</p>
-                <p className="text-white/60 text-sm">{transaction.date}</p>
+                <p className="text-foreground font-medium">{transaction.description}</p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-muted-foreground text-sm">
+                    {new Date(transaction.date).toLocaleDateString()}
+                  </span>
+                  {transaction.category && (
+                    <Badge variant="outline" className="text-xs">
+                      {categoryIcons[transaction.category]} {transaction.category}
+                    </Badge>
+                  )}
+                  {transaction.paymentMethod && (
+                    <Badge variant="outline" className="text-xs">
+                      💳 {transaction.paymentMethod}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className="text-white font-medium">
+              <span className={cn(
+                "text-foreground font-medium",
+                transaction.type === "deposit" ? "text-green-500" : "text-red-500"
+              )}>
                 {transaction.type === "deposit" ? "+" : "-"}${Math.abs(transaction.amount)}
               </span>
-              <Badge className={statusColors[transaction.status]}>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "border",
+                  statusVariants[transaction.status]
+                )}
+              >
                 {transaction.status}
               </Badge>
             </div>

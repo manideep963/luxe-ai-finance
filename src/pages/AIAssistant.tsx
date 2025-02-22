@@ -30,19 +30,20 @@ export default function AIAssistant() {
       // Add user message to chat
       setMessages(prev => [...prev, { role: "user", content: userMessage }]);
 
-      const { data: { gemini_key } } = await supabase
+      // Fetch the Gemini API key from Supabase secrets
+      const { data, error: secretError } = await supabase
         .from('secrets')
         .select('value')
         .eq('name', 'GEMINI_API_KEY')
-        .single();
+        .maybeSingle();
 
-      if (!gemini_key) {
-        throw new Error("AI service is not configured");
+      if (secretError || !data?.value) {
+        throw new Error("AI service is not configured properly");
       }
 
-      // Call Gemini API
+      // Call Gemini API with the retrieved key
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${gemini_key}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${data.value}`,
         {
           method: 'POST',
           headers: {
@@ -58,13 +59,13 @@ export default function AIAssistant() {
         }
       );
 
-      const data = await response.json();
+      const responseData = await response.json();
       
-      if (data.error) {
-        throw new Error(data.error.message);
+      if (responseData.error) {
+        throw new Error(responseData.error.message);
       }
 
-      const aiResponse = data.candidates[0].content.parts[0].text;
+      const aiResponse = responseData.candidates[0].content.parts[0].text;
       
       // Add AI response to chat
       setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);

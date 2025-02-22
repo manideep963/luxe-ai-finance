@@ -18,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const navigationItems = [
   { name: "Home", icon: HomeIcon, path: "/" },
@@ -32,6 +39,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -109,13 +117,46 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </span>
           </Button>
           
-          <Link
-            to="/settings"
-            className="flex items-center space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all duration-200"
-          >
-            <Settings2Icon className="w-5 h-5" />
-            <span className="text-sm font-medium">Settings</span>
-          </Link>
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-start space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+              >
+                <Settings2Icon className="w-5 h-5" />
+                <span className="text-sm font-medium">Settings</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>User Profile</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center space-x-4">
+                  <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple">
+                    <UserRoundIcon className="w-12 h-12 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">John Doe</h3>
+                    <p className="text-sm text-muted-foreground">john@example.com</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Account Settings</h4>
+                  <div className="space-y-1">
+                    <Button variant="outline" className="w-full justify-start">
+                      <UserRoundIcon className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Settings2Icon className="w-4 h-4 mr-2" />
+                      Preferences
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           
           <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-white/5">
             <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple flex items-center justify-center">

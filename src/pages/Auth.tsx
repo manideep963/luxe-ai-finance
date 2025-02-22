@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FingerprintIcon, Shield, Mail, Key, Eye, EyeOff, Github, Chrome } from "lucide-react";
+import { FingerprintIcon, Shield, Mail, Key, Eye, EyeOff, Github, Chrome, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showFinancialForm, setShowFinancialForm] = useState(false);
@@ -25,10 +28,31 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+            }
+          }
+        });
         if (error) throw error;
         
         if (data.user) {
+          // Update the profiles table
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              email: email,
+              full_name: `${firstName} ${lastName}`,
+              updated_at: new Date().toISOString(),
+            });
+
+          if (profileError) throw profileError;
+
           setUserId(data.user.id);
           setShowFinancialForm(true);
           toast({
@@ -100,6 +124,33 @@ const Auth = () => {
 
             <form onSubmit={handleAuth} className="space-y-6">
               <div className="space-y-4">
+                {isSignUp && (
+                  <>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <Input
+                        type="text"
+                        placeholder="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="glass-input pl-12"
+                        required={isSignUp}
+                      />
+                    </div>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <Input
+                        type="text"
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="glass-input pl-12"
+                        required={isSignUp}
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                   <Input

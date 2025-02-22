@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { BellIcon, PlusIcon, CalendarIcon, AlertCircleIcon, CheckCircle2Icon } from "lucide-react";
@@ -19,6 +18,7 @@ interface Bill {
   frequency?: "monthly" | "yearly";
   category: string;
   reminderSet: boolean;
+  paid?: boolean;
 }
 
 const Bills = () => {
@@ -32,7 +32,8 @@ const Bills = () => {
       type: "subscription",
       frequency: "monthly",
       category: "Entertainment",
-      reminderSet: true
+      reminderSet: true,
+      paid: false
     },
     { 
       id: 2, 
@@ -41,7 +42,8 @@ const Bills = () => {
       dueDate: '2024-03-28',
       type: "one-time",
       category: "Utilities",
-      reminderSet: false
+      reminderSet: false,
+      paid: false
     },
     { 
       id: 3, 
@@ -51,7 +53,8 @@ const Bills = () => {
       type: "subscription",
       frequency: "monthly",
       category: "Utilities",
-      reminderSet: true
+      reminderSet: true,
+      paid: false
     }
   ]);
 
@@ -91,7 +94,8 @@ const Bills = () => {
       type: newBill.type as "one-time" | "subscription",
       frequency: newBill.type === "subscription" ? newBill.frequency as "monthly" | "yearly" : undefined,
       category: newBill.category,
-      reminderSet: false
+      reminderSet: false,
+      paid: false
     }]);
 
     setNewBill({
@@ -133,6 +137,20 @@ const Bills = () => {
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const handlePayNow = (billId: number) => {
+    setBills(prev => prev.map(bill => {
+      if (bill.id === billId) {
+        toast({
+          title: "Payment Successful",
+          description: `Payment of $${bill.amount} for ${bill.name} has been processed.`,
+          variant: "default",
+        });
+        return { ...bill, paid: true };
+      }
+      return bill;
+    }));
   };
 
   const sortedBills = [...bills].sort((a, b) => {
@@ -226,12 +244,17 @@ const Bills = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <h3 className="text-xl font-semibold text-white">{bill.name}</h3>
+                      <h3 className="text-xl font-semibold text-foreground">{bill.name}</h3>
                       <Badge variant={bill.type === "subscription" ? "secondary" : "outline"}>
                         {bill.type === "subscription" ? `${bill.frequency} subscription` : "one-time"}
                       </Badge>
+                      {bill.paid && (
+                        <Badge variant="success" className="bg-[#28A745] text-white">
+                          Paid
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-white/60">Due: {new Date(bill.dueDate).toLocaleDateString()}</p>
+                    <p className="text-muted-foreground">Due: {new Date(bill.dueDate).toLocaleDateString()}</p>
                     <Badge 
                       variant={daysUntilDue <= 3 ? "destructive" : "outline"}
                       className="mt-2"
@@ -243,25 +266,36 @@ const Bills = () => {
                     </div>
                   </div>
                   <div className="text-right space-y-3">
-                    <p className="text-2xl font-bold text-white">${bill.amount.toFixed(2)}</p>
-                    <Button 
-                      variant={bill.reminderSet ? "outline" : "default"}
-                      size="sm"
-                      onClick={() => toggleReminder(bill.id)}
-                      className="flex items-center space-x-2"
-                    >
-                      {bill.reminderSet ? (
-                        <>
-                          <CheckCircle2Icon className="w-4 h-4 mr-2" />
-                          Reminder Set
-                        </>
-                      ) : (
-                        <>
-                          <BellIcon className="w-4 h-4 mr-2" />
-                          Set Reminder
-                        </>
-                      )}
-                    </Button>
+                    <p className="text-2xl font-bold text-foreground">${bill.amount.toFixed(2)}</p>
+                    <div className="space-y-2">
+                      <Button 
+                        variant={bill.reminderSet ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => toggleReminder(bill.id)}
+                        className="w-full flex items-center justify-center"
+                      >
+                        {bill.reminderSet ? (
+                          <>
+                            <CheckCircle2Icon className="w-4 h-4 mr-2" />
+                            Reminder Set
+                          </>
+                        ) : (
+                          <>
+                            <BellIcon className="w-4 h-4 mr-2" />
+                            Set Reminder
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handlePayNow(bill.id)}
+                        disabled={bill.paid}
+                        className="w-full bg-[#28A745] hover:bg-[#28A745]/90 text-white"
+                      >
+                        {bill.paid ? "Paid" : "Pay Now"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

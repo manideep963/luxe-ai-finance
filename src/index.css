@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
@@ -29,25 +30,36 @@
   }
 
   :root.light-mode {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --background: 0 0% 97%; /* #F8F9FA */
+    --foreground: 210 10% 15%; /* #212529 */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 210 10% 15%; /* #212529 */
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 210 10% 15%; /* #212529 */
+    --primary: 211 100% 50%; /* #007BFF */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --secondary: 208 7% 46%; /* #6C757D */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+    --muted: 220 13% 91%; /* #E5E7EB */
+    --muted-foreground: 208 7% 46%; /* #6C757D */
+    --accent: 211 100% 50%; /* #007BFF */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF */
+    --destructive: 354 70% 54%; /* #DC3545 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --border: 220 13% 91%; /* #E5E7EB */
+    --input: 220 13% 91%; /* #E5E7EB */
+    --ring: 211 100% 50%; /* #007BFF */
+
+    /* Custom colors for categories */
+    --color-income: 187 41% 41%; /* #17A2B8 */
+    --color-expense: 354 77% 56%; /* #E63946 */
+    --color-food: 156 61% 51%; /* #34D399 */
+    --color-travel: 217 91% 60%; /* #3B82F6 */
+    --color-shopping: 25 95% 53%; /* #F97316 */
+    --color-entertainment: 255 92% 76%; /* #8B5CF6 */
+    --color-utilities: 272 91% 65%; /* #A855F7 */
+    --color-success: 134 61% 41%; /* #28A745 */
+    --color-warning: 45 100% 51%; /* #FFC107 */
   }
 }
 
@@ -57,34 +69,31 @@
   }
 
   body {
-    @apply bg-midnight text-foreground font-inter antialiased;
-    background-image: 
-      radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 90% 10%, rgba(255, 215, 0, 0.05) 0%, transparent 40%);
+    @apply bg-background text-foreground font-inter antialiased;
   }
 
   .glass-card {
-    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl;
+    @apply bg-card/50 backdrop-blur-lg border border-border rounded-2xl shadow-xl;
   }
 
   .glass-input {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-neon/50 transition-all duration-200;
+    @apply bg-background/5 backdrop-blur-md border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-200;
   }
 
   .neon-border {
-    @apply border border-neon/20 shadow-[0_0_15px_rgba(0,242,254,0.3)];
+    @apply border border-primary/20 shadow-[0_0_15px_rgba(0,123,255,0.3)];
   }
 
   .hover-glow {
-    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,242,254,0.5)];
+    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(0,123,255,0.5)];
   }
 
   .nav-item {
-    @apply flex items-center space-x-3 px-4 py-3 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all duration-200;
+    @apply flex items-center space-x-3 px-4 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/5 transition-all duration-200;
   }
 
   .nav-item.active {
-    @apply bg-white/10 text-white;
+    @apply bg-muted/10 text-foreground;
   }
 }
 

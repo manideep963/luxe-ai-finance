@@ -28,7 +28,7 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        // First, create the auth user
+        // First, create the auth user and wait for session
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -42,7 +42,14 @@ const Auth = () => {
 
         if (signUpError) throw signUpError;
         
-        if (authData.user) {
+        if (!authData.user?.id) {
+          throw new Error('User creation failed');
+        }
+
+        // Wait a moment to ensure the auth user is fully created
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        try {
           // Create or update profile
           const { error: profileError } = await supabase
             .from('profiles')
@@ -53,7 +60,10 @@ const Auth = () => {
               updated_at: new Date().toISOString(),
             });
 
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            throw profileError;
+          }
 
           // Initialize financial data
           const { error: financialError } = await supabase
@@ -65,7 +75,10 @@ const Auth = () => {
               monthly_expenditure: 0,
             });
 
-          if (financialError) throw financialError;
+          if (financialError) {
+            console.error('Financial data creation error:', financialError);
+            throw financialError;
+          }
 
           setUserId(authData.user.id);
           setShowFinancialForm(true);
@@ -73,6 +86,10 @@ const Auth = () => {
             title: "Account created!",
             description: "Please complete your financial profile.",
           });
+        } catch (error: any) {
+          // If profile or financial data creation fails, delete the auth user
+          await supabase.auth.admin.deleteUser(authData.user.id);
+          throw new Error(`Failed to set up user profile: ${error.message}`);
         }
       } else {
         // Sign in process
@@ -112,6 +129,7 @@ const Auth = () => {
         }
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         variant: "destructive",
         title: "Authentication error",

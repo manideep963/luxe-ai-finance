@@ -26,17 +26,36 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("financial_data")
+      // First, verify that the profile exists and get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('Not authenticated');
+
+      // Wait for a short time to ensure profile is created by the trigger
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Check if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile) throw new Error('Profile not found');
+
+      // Now create/update financial data
+      const { error: financialError } = await supabase
+        .from('financial_data')
         .upsert({
-          user_id: userId,
-          monthly_salary: Number(formData.monthly_salary),
-          total_savings: Number(formData.total_savings),
-          monthly_expenditure: Number(formData.monthly_expenditure),
+          user_id: user.id,
+          monthly_salary: Number(formData.monthly_salary) || 0,
+          total_savings: Number(formData.total_savings) || 0,
+          monthly_expenditure: Number(formData.monthly_expenditure) || 0,
           updated_at: new Date().toISOString(),
         });
 
-      if (error) throw error;
+      if (financialError) throw financialError;
 
       toast({
         title: "Financial information saved!",
@@ -45,6 +64,7 @@ export function FinancialInfoForm({ userId, onComplete }: FinancialInfoFormProps
 
       onComplete();
     } catch (error: any) {
+      console.error('Error saving financial data:', error);
       toast({
         variant: "destructive",
         title: "Error saving financial information",

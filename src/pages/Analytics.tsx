@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { BrainCircuitIcon, CalendarIcon, TrendingUpIcon, WalletIcon } from "lucide-react";
@@ -7,37 +6,70 @@ import { Button } from "@/components/ui/button";
 import { AnalyticsChart } from "@/components/stats/AnalyticsChart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useFinancialData } from "@/hooks/useFinancialData";
 
 type TimeFrame = "1D" | "7D" | "1M" | "6M" | "1Y";
 
 export default function Analytics() {
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<TimeFrame>("7D");
+  const { financialData } = useFinancialData();
   
-  const { data: aiInsights } = useQuery({
-    queryKey: ['ai-insights'],
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['transactions'],
     queryFn: async () => {
-      // In a real app, this would call your AI service
-      return [
-        {
-          type: "warning",
-          title: "Spending Alert",
-          message: "Your entertainment expenses increased by 20% this month. Consider budgeting!",
-        },
-        {
-          type: "success",
-          title: "Savings Opportunity",
-          message: "You've spent less on groceries this week. Keep up the savings!",
-        },
-      ];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      return data;
     },
   });
+
+  const calculateInsights = () => {
+    if (!transactions.length || !financialData) return [];
+
+    const monthlyIncome = financialData.monthly_salary;
+    const monthlySpending = transactions
+      .filter(t => {
+        const date = new Date(t.date);
+        const now = new Date();
+        return date.getMonth() === now.getMonth() && 
+               date.getFullYear() === now.getFullYear() &&
+               t.type === 'withdrawal';
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const insights = [];
+    
+    if (monthlySpending > monthlyIncome * 0.8) {
+      insights.push({
+        type: "warning",
+        title: "Spending Alert",
+        message: `Your monthly spending (${monthlySpending.toFixed(2)}) is ${((monthlySpending/monthlyIncome)*100).toFixed(1)}% of your income.`,
+      });
+    }
+
+    const savingsRate = ((financialData.total_savings / monthlyIncome) * 100).toFixed(1);
+    insights.push({
+      type: "success",
+      title: "Savings Status",
+      message: `Your current savings rate is ${savingsRate}% of your monthly income.`,
+    });
+
+    return insights;
+  };
 
   const timeFrames: TimeFrame[] = ["1D", "7D", "1M", "6M", "1Y"];
 
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <motion.h1
             initial={{ opacity: 0, x: -20 }}
@@ -68,9 +100,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Spending Breakdown */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,7 +115,6 @@ export default function Analytics() {
             <AnalyticsChart type="spending" timeFrame={selectedTimeFrame} />
           </motion.div>
 
-          {/* Income Trends */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -102,12 +131,11 @@ export default function Analytics() {
           </motion.div>
         </div>
 
-        {/* AI Insights */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="glass-card p-6"
+          className="glass-card p-6 mt-6"
         >
           <div className="flex items-center space-x-2 mb-6">
             <BrainCircuitIcon className="w-6 h-6 text-neon" />
@@ -115,7 +143,7 @@ export default function Analytics() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {aiInsights?.map((insight, index) => (
+            {calculateInsights().map((insight, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -20 }}

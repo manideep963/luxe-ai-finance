@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -41,7 +40,6 @@ const Auth = () => {
         if (error) throw error;
         
         if (data.user) {
-          // Update the profiles table
           const { error: profileError } = await supabase
             .from('profiles')
             .upsert({
@@ -49,9 +47,22 @@ const Auth = () => {
               email: email,
               full_name: `${firstName} ${lastName}`,
               updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'id'
             });
 
           if (profileError) throw profileError;
+
+          const { error: financialError } = await supabase
+            .from('financial_data')
+            .insert({
+              user_id: data.user.id,
+              monthly_salary: 0,
+              total_savings: 0,
+              monthly_expenditure: 0,
+            });
+
+          if (financialError) throw financialError;
 
           setUserId(data.user.id);
           setShowFinancialForm(true);

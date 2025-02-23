@@ -135,7 +135,7 @@ export default function Transactions() {
         amount,
         type: newTransaction.type,
         status: "success" as const,
-        date: newTransaction.date,
+        date: new Date(newTransaction.date).toISOString(),
         description: newTransaction.description,
         category: newTransaction.category,
         payment_method: newTransaction.payment_method,
@@ -150,6 +150,31 @@ export default function Transactions() {
       if (transactionError) {
         console.error('Transaction Error:', transactionError);
         throw transactionError;
+      }
+
+      // Update financial_data based on transaction type
+      const { data: financialData } = await supabase
+        .from('financial_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (financialData) {
+        const updates: any = {};
+        
+        if (newTransaction.type === 'deposit') {
+          updates.total_savings = Number(financialData.total_savings) + amount;
+        } else {
+          updates.monthly_expenditure = Number(financialData.monthly_expenditure) + amount;
+          updates.total_savings = Math.max(0, Number(financialData.total_savings) - amount);
+        }
+
+        const { error: updateError } = await supabase
+          .from('financial_data')
+          .update(updates)
+          .eq('user_id', user.id);
+
+        if (updateError) throw updateError;
       }
 
       await refetch();

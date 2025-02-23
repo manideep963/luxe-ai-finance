@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -58,7 +57,7 @@ export function StatCard({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       className={cn(
-        "glass-card p-6 relative overflow-hidden",
+        "glass-card p-6 relative overflow-hidden group",
         "border border-white/10 hover:border-neon/30 transition-all duration-300",
         className
       )}

@@ -178,7 +178,7 @@ const DashboardLayout = ({
         <div className="px-6 py-8">
           <h1 className="text-2xl font-bold">
             <span className="text-neon">FORTUNA</span>
-            <span className="text-white">AI</span>
+            <span className="text-white"></span>
           </h1>
         </div>
 

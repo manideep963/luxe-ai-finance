@@ -20,9 +20,9 @@ export type Database = {
         }
         Insert: {
           id?: string
-          monthly_expenditure: number
-          monthly_salary: number
-          total_savings: number
+          monthly_expenditure?: number
+          monthly_salary?: number
+          total_savings?: number
           updated_at?: string
           user_id: string
         }
@@ -34,7 +34,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "financial_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       market_watchlist: {
         Row: {

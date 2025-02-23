@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FingerprintIcon, Shield, Mail, Key, Eye, EyeOff, Github, Chrome, User } from "lucide-react";
@@ -22,10 +22,29 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check if user is already logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate('/');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        navigate('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   const handleSignUp = async () => {
     try {
+      setLoading(true);
+
       // Step 1: Sign up the user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -37,28 +56,17 @@ const Auth = () => {
       });
 
       if (signUpError) throw signUpError;
-      if (!authData.user?.id) throw new Error('User creation failed');
+      if (!user) throw new Error('User creation failed');
 
-      // Step 2: Create profile after successful signup
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: email,
-          full_name: `${firstName} ${lastName}`,
-          updated_at: new Date().toISOString(),
-        });
+      // Profile is automatically created by the trigger
+      // Wait a moment for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        throw profileError;
-      }
-
-      // Step 3: Initialize financial data
+      // Step 2: Initialize financial data
       const { error: financialError } = await supabase
         .from('financial_data')
         .insert({
-          user_id: authData.user.id,
+          user_id: user.id,
           monthly_salary: 0,
           total_savings: 0,
           monthly_expenditure: 0,
@@ -69,7 +77,7 @@ const Auth = () => {
         throw financialError;
       }
 
-      setUserId(authData.user.id);
+      setUserId(user.id);
       setShowFinancialForm(true);
       toast({
         title: "Account created!",
@@ -83,11 +91,14 @@ const Auth = () => {
         title: "Sign up failed",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignIn = async () => {
     try {
+      setLoading(true);
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -126,21 +137,17 @@ const Auth = () => {
         title: "Sign in failed",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    try {
-      if (isSignUp) {
-        await handleSignUp();
-      } else {
-        await handleSignIn();
-      }
-    } finally {
-      setLoading(false);
+    if (isSignUp) {
+      await handleSignUp();
+    } else {
+      await handleSignIn();
     }
   };
 

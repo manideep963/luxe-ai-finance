@@ -22,119 +22,128 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const handleSignUp = async () => {
+    try {
+      // Step 1: Sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      if (!authData.user?.id) throw new Error('User creation failed');
+
+      // Step 2: Get the session to confirm user creation
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error('Session creation failed');
+
+      // Step 3: Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email: email,
+          full_name: `${firstName} ${lastName}`,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        throw profileError;
+      }
+
+      // Step 4: Initialize financial data
+      const { error: financialError } = await supabase
+        .from('financial_data')
+        .insert({
+          user_id: authData.user.id,
+          monthly_salary: 0,
+          total_savings: 0,
+          monthly_expenditure: 0,
+        });
+
+      if (financialError) {
+        console.error('Financial data creation error:', financialError);
+        throw financialError;
+      }
+
+      setUserId(authData.user.id);
+      setShowFinancialForm(true);
+      toast({
+        title: "Account created!",
+        description: "Please complete your financial profile.",
+      });
+
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      toast({
+        variant: "destructive",
+        title: "Sign up failed",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) throw signInError;
+      if (!data.user) throw new Error('Sign in failed');
+
+      // Check if financial data exists
+      const { data: financialData, error: financialError } = await supabase
+        .from('financial_data')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (financialError) throw financialError;
+
+      if (!financialData) {
+        setUserId(data.user.id);
+        setShowFinancialForm(true);
+        toast({
+          title: "Welcome!",
+          description: "Please complete your financial profile.",
+        });
+      } else {
+        navigate("/");
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully logged in.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      toast({
+        variant: "destructive",
+        title: "Sign in failed",
+        description: error.message,
+      });
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
+    
     try {
       if (isSignUp) {
-        // First, create the auth user and wait for session
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-            }
-          }
-        });
-
-        if (signUpError) throw signUpError;
-        
-        if (!authData.user?.id) {
-          throw new Error('User creation failed');
-        }
-
-        // Wait a moment to ensure the auth user is fully created
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        try {
-          // Create or update profile
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: authData.user.id,
-              email: email,
-              full_name: `${firstName} ${lastName}`,
-              updated_at: new Date().toISOString(),
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            throw profileError;
-          }
-
-          // Initialize financial data
-          const { error: financialError } = await supabase
-            .from('financial_data')
-            .insert({
-              user_id: authData.user.id,
-              monthly_salary: 0,
-              total_savings: 0,
-              monthly_expenditure: 0,
-            });
-
-          if (financialError) {
-            console.error('Financial data creation error:', financialError);
-            throw financialError;
-          }
-
-          setUserId(authData.user.id);
-          setShowFinancialForm(true);
-          toast({
-            title: "Account created!",
-            description: "Please complete your financial profile.",
-          });
-        } catch (error: any) {
-          // If profile or financial data creation fails, delete the auth user
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          throw new Error(`Failed to set up user profile: ${error.message}`);
-        }
+        await handleSignUp();
       } else {
-        // Sign in process
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) throw signInError;
-
-        if (data.user) {
-          // Check if financial data exists
-          const { data: financialData, error: financialError } = await supabase
-            .from('financial_data')
-            .select('*')
-            .eq('user_id', data.user.id)
-            .maybeSingle();
-
-          if (financialError) throw financialError;
-
-          // If no financial data exists, show the financial form
-          if (!financialData) {
-            setUserId(data.user.id);
-            setShowFinancialForm(true);
-            toast({
-              title: "Welcome!",
-              description: "Please complete your financial profile.",
-            });
-          } else {
-            // If financial data exists, redirect to home
-            navigate("/");
-            toast({
-              title: "Welcome back!",
-              description: "You've successfully logged in.",
-            });
-          }
-        }
+        await handleSignIn();
       }
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      toast({
-        variant: "destructive",
-        title: "Authentication error",
-        description: error.message,
-      });
     } finally {
       setLoading(false);
     }
@@ -150,10 +159,10 @@ const Auth = () => {
 
   const handleOAuth = async (provider: 'google' | 'github') => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 

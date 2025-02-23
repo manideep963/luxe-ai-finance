@@ -7,6 +7,7 @@
 
 @layer base {
   :root {
+    /* Dark mode colors (default) */
     --background: 226 33% 10%;
     --foreground: 210 40% 98%;
     --card: 226 33% 12%;
@@ -27,39 +28,47 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 189 100% 50%;
     --radius: 0.75rem;
+
+    /* Custom chart colors - dark mode */
+    --color-income: 187 41% 41%;
+    --color-expense: 354 77% 56%;
+    --color-food: 156 61% 51%;
+    --color-travel: 217 91% 60%;
+    --color-shopping: 25 95% 53%;
+    --color-entertainment: 255 92% 76%;
+    --color-utilities: 272 91% 65%;
   }
 
   :root.light-mode {
-    --background: 0 0% 97%; /* #F8F9FA */
-    --foreground: 210 10% 15%; /* #212529 */
+    /* Light mode colors */
+    --background: 210 20% 98%; /* #F8F9FA */
+    --foreground: 222 47% 11%; /* #1F2937 */
     --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 210 10% 15%; /* #212529 */
+    --card-foreground: 222 47% 11%; /* #1F2937 */
     --popover: 0 0% 100%; /* #FFFFFF */
-    --popover-foreground: 210 10% 15%; /* #212529 */
-    --primary: 211 100% 50%; /* #007BFF */
+    --popover-foreground: 222 47% 11%; /* #1F2937 */
+    --primary: 217 91% 60%; /* #3B82F6 */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --secondary: 208 7% 46%; /* #6C757D */
-    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
-    --muted: 220 13% 91%; /* #E5E7EB */
-    --muted-foreground: 208 7% 46%; /* #6C757D */
-    --accent: 211 100% 50%; /* #007BFF */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF */
-    --destructive: 354 70% 54%; /* #DC3545 */
-    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --secondary: 220 13% 91%; /* #E5E7EB */
+    --secondary-foreground: 222 47% 11%; /* #1F2937 */
+    --muted: 220 14% 96%; /* #F3F4F6 */
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
+    --accent: 220 13% 91%; /* #E5E7EB */
+    --accent-foreground: 222 47% 11%; /* #1F2937 */
+    --destructive: 0 84% 60%; /* #EF4444 */
+    --destructive-foreground: 210 20% 98%; /* #F8F9FA */
     --border: 220 13% 91%; /* #E5E7EB */
     --input: 220 13% 91%; /* #E5E7EB */
-    --ring: 211 100% 50%; /* #007BFF */
+    --ring: 217 91% 60%; /* #3B82F6 */
 
-    /* Custom colors for categories */
-    --color-income: 187 41% 41%; /* #17A2B8 */
-    --color-expense: 354 77% 56%; /* #E63946 */
-    --color-food: 156 61% 51%; /* #34D399 */
-    --color-travel: 217 91% 60%; /* #3B82F6 */
+    /* Custom chart colors - light mode */
+    --color-food: 162 47% 50%; /* #34D399 */
+    --color-travel: 234 89% 74%; /* #6366F1 */
     --color-shopping: 25 95% 53%; /* #F97316 */
-    --color-entertainment: 255 92% 76%; /* #8B5CF6 */
+    --color-entertainment: 259 94% 51%; /* #8B5CF6 */
     --color-utilities: 272 91% 65%; /* #A855F7 */
-    --color-success: 134 61% 41%; /* #28A745 */
-    --color-warning: 45 100% 51%; /* #FFC107 */
+    --color-success: 161 84% 40%; /* #10B981 */
+    --color-warning: 38 92% 50%; /* #F59E0B */
   }
 }
 
@@ -99,4 +108,49 @@
 
 .font-inter {
   font-family: 'Inter', sans-serif;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
 }

@@ -52,6 +52,19 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Chart and status colors
+        chart: {
+          food: "hsl(var(--color-food))",
+          travel: "hsl(var(--color-travel))",
+          shopping: "hsl(var(--color-shopping))",
+          entertainment: "hsl(var(--color-entertainment))",
+          utilities: "hsl(var(--color-utilities))",
+        },
+        status: {
+          success: "hsl(var(--color-success))",
+          warning: "hsl(var(--color-warning))",
+          error: "hsl(var(--destructive))",
+        },
       },
       keyframes: {
         "accordion-down": {

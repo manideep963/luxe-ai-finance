@@ -19,6 +19,24 @@ export function useFinancialData() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Get current month's transactions
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', startOfMonth.toISOString())
+        .eq('type', 'withdrawal');
+
+      if (transactionsError) throw transactionsError;
+
+      // Calculate total monthly expenditure from transactions
+      const monthlyExpenditure = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+
+      // Get financial data and update monthly expenditure
       const { data, error } = await supabase
         .from('financial_data')
         .select('*')
@@ -26,6 +44,18 @@ export function useFinancialData() {
         .single();
 
       if (error) throw error;
+
+      // Update monthly_expenditure if it's different
+      if (data.monthly_expenditure !== monthlyExpenditure) {
+        const { error: updateError } = await supabase
+          .from('financial_data')
+          .update({ monthly_expenditure: monthlyExpenditure })
+          .eq('user_id', user.id);
+
+        if (updateError) throw updateError;
+        data.monthly_expenditure = monthlyExpenditure;
+      }
+
       return data as FinancialData;
     },
   });

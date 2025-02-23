@@ -17,7 +17,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,88 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    email: string;
+    full_name: string;
+  } | null>(null);
+  const [editedProfile, setEditedProfile] = useState({
+    email: "",
+    full_name: "",
+  });
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setUserProfile(data);
+        setEditedProfile({
+          email: data.email || '',
+          full_name: data.full_name || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Update email in auth if it changed
+      if (editedProfile.email !== userProfile?.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: editedProfile.email,
+        });
+        if (emailError) throw emailError;
+      }
+
+      // Update profile information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          email: editedProfile.email,
+          full_name: editedProfile.full_name,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      setUserProfile({
+        ...userProfile!,
+        email: editedProfile.email,
+        full_name: editedProfile.full_name,
+      });
+
+      setIsEditingProfile(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+
+      await fetchUserProfile();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error updating profile",
+        description: error.message,
+      });
+    }
+  };
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -137,23 +220,53 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     <UserRoundIcon className="w-12 h-12 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">John Doe</h3>
-                    <p className="text-sm text-muted-foreground">john@example.com</p>
+                    <h3 className="text-lg font-semibold">{userProfile?.full_name}</h3>
+                    <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Account Settings</h4>
-                  <div className="space-y-1">
-                    <Button variant="outline" className="w-full justify-start">
-                      <UserRoundIcon className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Settings2Icon className="w-4 h-4 mr-2" />
-                      Preferences
-                    </Button>
+                {isEditingProfile ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Full Name</label>
+                      <Input
+                        value={editedProfile.full_name}
+                        onChange={(e) => setEditedProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                        placeholder="Full Name"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Email</label>
+                      <Input
+                        type="email"
+                        value={editedProfile.email}
+                        onChange={(e) => setEditedProfile(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="Email"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button onClick={handleUpdateProfile}>Save Changes</Button>
+                      <Button variant="outline" onClick={() => setIsEditingProfile(false)}>Cancel</Button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Account Settings</h4>
+                    <div className="space-y-1">
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => setIsEditingProfile(true)}
+                      >
+                        <UserRoundIcon className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Settings2Icon className="w-4 h-4 mr-2" />
+                        Preferences
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </DialogContent>
           </Dialog>
@@ -163,8 +276,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               <UserRoundIcon className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-white">John Doe</p>
-              <p className="text-xs text-white/60">john@example.com</p>
+              <p className="text-sm font-medium text-white">{userProfile?.full_name}</p>
+              <p className="text-xs text-white/60">{userProfile?.email}</p>
             </div>
           </div>
         </div>

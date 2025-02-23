@@ -1,4 +1,3 @@
-
 import { 
   HomeIcon, 
   LineChartIcon, 
@@ -42,6 +41,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     email: string;
     full_name: string;
@@ -52,8 +52,25 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   });
 
   useEffect(() => {
-    fetchUserProfile();
+    checkAuthStatus();
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        setIsAuthenticated(true);
+        fetchUserProfile();
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setUserProfile(null);
+      }
+    });
   }, []);
+
+  const checkAuthStatus = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    if (session) {
+      fetchUserProfile();
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -149,6 +166,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const handleSignInClick = () => {
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-midnight flex">
       {/* Sidebar */}
@@ -200,86 +221,108 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </span>
           </Button>
           
-          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogTrigger asChild>
+          {isAuthenticated ? (
+            <>
+              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full flex items-center justify-start space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+                  >
+                    <Settings2Icon className="w-5 h-5" />
+                    <span className="text-sm font-medium">Settings</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>User Profile</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple">
+                        <UserRoundIcon className="w-12 h-12 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{userProfile?.full_name}</h3>
+                        <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
+                      </div>
+                    </div>
+                    {isEditingProfile ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Full Name</label>
+                          <Input
+                            value={editedProfile.full_name}
+                            onChange={(e) => setEditedProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                            placeholder="Full Name"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Email</label>
+                          <Input
+                            type="email"
+                            value={editedProfile.email}
+                            onChange={(e) => setEditedProfile(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="Email"
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button onClick={handleUpdateProfile}>Save Changes</Button>
+                          <Button variant="outline" onClick={() => setIsEditingProfile(false)}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Account Settings</h4>
+                        <div className="space-y-1">
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start"
+                            onClick={() => setIsEditingProfile(true)}
+                          >
+                            <UserRoundIcon className="w-4 h-4 mr-2" />
+                            Edit Profile
+                          </Button>
+                          <Button variant="outline" className="w-full justify-start">
+                            <Settings2Icon className="w-4 h-4 mr-2" />
+                            Preferences
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-white/5">
+                <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple flex items-center justify-center">
+                  <UserRoundIcon className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">{userProfile?.full_name}</p>
+                  <p className="text-xs text-white/60">{userProfile?.email}</p>
+                </div>
+              </div>
+
               <Button
                 variant="ghost"
-                className="w-full flex items-center justify-start space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-start space-x-3 px-4 py-3 mt-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
               >
-                <Settings2Icon className="w-5 h-5" />
-                <span className="text-sm font-medium">Settings</span>
+                <LogInIcon className="w-5 h-5" />
+                <span className="text-sm font-medium">Sign Out</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>User Profile</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple">
-                    <UserRoundIcon className="w-12 h-12 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{userProfile?.full_name}</h3>
-                    <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
-                  </div>
-                </div>
-                {isEditingProfile ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Full Name</label>
-                      <Input
-                        value={editedProfile.full_name}
-                        onChange={(e) => setEditedProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                        placeholder="Full Name"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Email</label>
-                      <Input
-                        type="email"
-                        value={editedProfile.email}
-                        onChange={(e) => setEditedProfile(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="Email"
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button onClick={handleUpdateProfile}>Save Changes</Button>
-                      <Button variant="outline" onClick={() => setIsEditingProfile(false)}>Cancel</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Account Settings</h4>
-                    <div className="space-y-1">
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => setIsEditingProfile(true)}
-                      >
-                        <UserRoundIcon className="w-4 h-4 mr-2" />
-                        Edit Profile
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Settings2Icon className="w-4 h-4 mr-2" />
-                        Preferences
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          <div className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-white/5">
-            <div className="p-2 rounded-full bg-gradient-to-r from-neon to-purple flex items-center justify-center">
-              <UserRoundIcon className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">{userProfile?.full_name}</p>
-              <p className="text-xs text-white/60">{userProfile?.email}</p>
-            </div>
-          </div>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={handleSignInClick}
+              className="w-full flex items-center justify-start space-x-3 px-4 py-3 mb-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5"
+            >
+              <LogInIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">Sign In</span>
+            </Button>
+          )}
         </div>
       </aside>
 
@@ -287,14 +330,25 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex-1 ml-64">
         {/* Top Navigation */}
         <nav className="glass-card sticky top-0 z-50 px-6 py-4 flex items-center justify-end border-b border-white/10">
-          <Button
-            variant="outline"
-            className="glass-input hover:bg-white/10 flex items-center space-x-2"
-            onClick={handleSignOut}
-          >
-            <LogInIcon className="w-4 h-4" />
-            <span>Sign Out</span>
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              variant="outline"
+              className="glass-input hover:bg-white/10 flex items-center space-x-2"
+              onClick={handleSignOut}
+            >
+              <LogInIcon className="w-4 h-4" />
+              <span>Sign Out</span>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="glass-input hover:bg-white/10 flex items-center space-x-2"
+              onClick={handleSignInClick}
+            >
+              <LogInIcon className="w-4 h-4" />
+              <span>Sign In</span>
+            </Button>
+          )}
         </nav>
 
         {/* Page Content */}

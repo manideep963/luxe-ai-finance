@@ -39,12 +39,7 @@ const Auth = () => {
       if (signUpError) throw signUpError;
       if (!authData.user?.id) throw new Error('User creation failed');
 
-      // Step 2: Get the session to confirm user creation
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      if (!session) throw new Error('Session creation failed');
-
-      // Step 3: Create profile
+      // Step 2: Create profile after successful signup
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -59,7 +54,7 @@ const Auth = () => {
         throw profileError;
       }
 
-      // Step 4: Initialize financial data
+      // Step 3: Initialize financial data
       const { error: financialError } = await supabase
         .from('financial_data')
         .insert({
